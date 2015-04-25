@@ -16,12 +16,13 @@ class L0ByTowNeighborFaceVector : public L0{
         GLMmodel* doL0(double parpha, double pbeta, double plambda, int pmaxtimes);
 
         void chooseTypeOfNeighbor();
+
         void initInfo();
         void updateInfo();
         void delInfo();
+        void getPV();
+
         void delFaceNeighborFace();
-        void initFaceSpreadNeighborFace();
-        void delFaceSpreadNeighborFace();
         void recoveryVerticesByFaceVector();
 };
 #endif

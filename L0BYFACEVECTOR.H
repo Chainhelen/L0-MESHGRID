@@ -19,6 +19,7 @@ class L0ByFaceVector : public L0{
         void initInfo();
         void updateInfo();
         void delInfo();
+        void getPV();
         void delFaceNeighborFace();
         void initFaceSpreadNeighborFace();
         void delFaceSpreadNeighborFace();

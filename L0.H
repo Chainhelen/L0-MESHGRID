@@ -93,6 +93,8 @@ class L0{
 
         void getEdge();
         void delEdge();
+        void iniInfo();
+        void delInfo();
 
         Edge *createEdgeNode();
         List *createListNode();
