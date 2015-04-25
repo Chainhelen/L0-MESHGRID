@@ -14,7 +14,7 @@ L0ByTowNeighborFaceVector::L0ByTowNeighborFaceVector(GLMmodel *originmeshmodel, 
     p = NULL;
     v = NULL;
 }
-L0ByTowNeighborFaceVector~L0ByTowNeighborFaceVector()
+L0ByTowNeighborFaceVector::~L0ByTowNeighborFaceVector()
 {
     if(NULL != faceVector)
     {
@@ -51,4 +51,53 @@ GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double pl
     beta = pbeta;
     lambda = plambda;
     maxtimes = pmaxtimes;
+
+    return meshmodel;
+}
+void L0ByTowNeighborFaceVector::chooseTypeOfNeighbor()
+{
+#ifdef FIRSTFACENEIGHBORFACE
+   initFaceFirstNeighborFace();
+   faceNeighborFace = faceFirstNeighborFace;
+#endif
+
+#ifdef SECONDFACENEIGHBORFACE
+   initFaceSecondNeighborFace();
+   faceNeighborFace = faceSecondNeighborFace;
+#endif
+
+#ifdef ALLFACENEIGHBORFACE
+   initFaceAllNeighborFace();
+   faceNeighborFace = faceAllNeighborFace;
+#endif
+   initFaceSpreadNeighborFace();
+}
+
+void L0ByTowNeighborFaceVector::initInfo()
+{
+
+}
+void L0ByTowNeighborFaceVector::updateInfo()
+{
+
+}
+void L0ByTowNeighborFaceVector::delInfo()
+{
+
+}
+void L0ByTowNeighborFaceVector::delFaceNeighborFace()
+{
+
+}
+void L0ByTowNeighborFaceVector::initFaceSpreadNeighborFace()
+{
+
+}
+void L0ByTowNeighborFaceVector::delFaceSpreadNeighborFace()
+{
+
+}
+void L0ByTowNeighborFaceVector::recoveryVerticesByFaceVector()
+{
+
 }
