@@ -1,8 +1,8 @@
 #include "L0BYTOWNEIGHBORFACEVECTOR.H"
 
 //#define FIRSTFACENEIGHBORFACE
-//#define SECONDFACENEIGHBORFACE
-#define ALLFACENEIGHBORFACE
+#define SECONDFACENEIGHBORFACE
+//#define ALLFACENEIGHBORFACE
 
 
 L0ByTowNeighborFaceVector::L0ByTowNeighborFaceVector(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
@@ -55,13 +55,12 @@ GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double pl
     initFaceVector();
     updateFaceVector();
 
-    getEdge();
+    chooseTypeOfNeighbor();
     initInfo();
-    delEdge();
+    updateInfo();
 
     getPV();
 
-    chooseTypeOfNeighbor();
 
     SubSolving s_l0(faceNeighborFace, info, infocnt, arinfocnt, (int)meshmodel->numtriangles);
     s_l0.init();
@@ -127,6 +126,12 @@ GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double pl
     delVector(faceVector);
     faceVector = NULL;
 
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        for(j = 0;j < 3;j++){
+            meshmodel->vertices[3 * (i + 1) + j] = model[3 * i + j];
+        }
+    }
+
     return meshmodel;
 }
 void L0ByTowNeighborFaceVector::chooseTypeOfNeighbor()
@@ -149,14 +154,26 @@ void L0ByTowNeighborFaceVector::chooseTypeOfNeighbor()
 
 void L0ByTowNeighborFaceVector::initInfo()
 {
-    if(NULL == edge){
-        printf("error at L0ByTowNeighborFaceVector::initInfo  in edge\n");
-        return ;
-    }
 
     int i, j;
-    infocnt = edgeNum;
+
+    infocnt = 0;
     arinfocnt = 0;
+    List *faceneighborfacetail = NULL;
+    vector<int>v;
+
+    for(i  = 0;i < (int)meshmodel->numtriangles;i++){
+        faceneighborfacetail = faceNeighborFace[i];
+        while(faceneighborfacetail){
+            if(i < faceneighborfacetail->data){
+                v.push_back(i);
+                v.push_back(faceneighborfacetail->data);
+            }
+            faceneighborfacetail = faceneighborfacetail->next;
+        }
+    }
+
+    infocnt = (int)v.size() / 2;
 
     info = new Info*[(int)infocnt];
     if(NULL == info){
@@ -164,7 +181,6 @@ void L0ByTowNeighborFaceVector::initInfo()
         return ;
     }
 
-    Edge *edgetail = edge;
     for(i = 0;i < infocnt;i++){
         info[i] = new Info[2];
         if(NULL == info[i]){
@@ -173,20 +189,18 @@ void L0ByTowNeighborFaceVector::initInfo()
         }
         for(j  = 0;j < 2;j++){
             info[i][j].cnt = 2;
-            info[i][j].data = edgetail->f[j];
+            info[i][j].data = v[2 * i + j];
             info[i][j].w = 0.0;
         }
-        edgetail = edgetail->next;
     }
-    edgetail = NULL;
 }
 
 void L0ByTowNeighborFaceVector::updateInfo()
 {
     int i;
-    for(i = 0;i < infocnt;i++){
-        info[i][0].w = 1;
-        info[i][1].w = -1;
+    for(i = arinfocnt;i < infocnt;i++){
+        info[i][0].w = 1.0;
+        info[i][1].w = -1.0;
     }
 }
 void L0ByTowNeighborFaceVector::delInfo()

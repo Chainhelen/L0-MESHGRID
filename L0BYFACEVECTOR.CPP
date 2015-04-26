@@ -256,10 +256,7 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
             arpha = arpha / 2;
         }
 
-        RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
-        myRecovery.changeModel(model);
-        myRecovery.changeFaceVector(faceVector);
-        myRecovery.doL2(2);
+        recoveryVerticesByFaceVector();
     }
 
 
@@ -486,6 +483,13 @@ void L0ByFaceVector::delFaceSpreadNeighborFace()
 
 void L0ByFaceVector::recoveryVerticesByFaceVector()
 {
+    RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
+    myRecovery.changeModel(model);
+    myRecovery.changeFaceVector(faceVector);
+    myRecovery.doL2(2);
+
+    return ;
+
     int i, j ,k;
     double *newmodel = new double[(int)meshmodel->numvertices * 3];
     if(NULL == newmodel){
