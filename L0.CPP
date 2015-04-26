@@ -15,7 +15,6 @@ L0::L0(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **
         faceVector = NULL;
         verVector = NULL;
         faceAllNeighborFace = NULL;
-        faceNeighborEdge = NULL;
 
         initModel();
 }
@@ -46,7 +45,6 @@ L0::~L0()
     delFaceFirstNeighborFace();
     delFaceSecondNeighborFace();
     delFaceAllNeighborFace();
-    delFaceNeighborEdge();
 }
 
 void L0::initModel()
@@ -366,98 +364,6 @@ void L0::delFaceAllNeighborFace()
     }
 }
 
-//面领域与周围面片的边内积
-void L0::initFaceNeighborEdge(List **faceNeighborFace)
-{
-    int i, j, k, a, b, c, fIndex, num;
-    vector<int> v;
-    List *faceneighboredgetail = NULL;
-
-    if(NULL != faceNeighborEdge){
-        delFaceNeighborEdge();
-    }
-
-    faceNeighborEdge = new List*[(int)meshmodel->numtriangles];
-    if(NULL != faceNeighborEdge){
-        printf("error at L0::initFaceNeighborEdge------>");
-        return ;
-    }
-    for(i  = 0;i < (int)meshmodel->numtriangles;i++){
-        faceNeighborEdge[i] = NULL;
-    }
-
-    for(i = 0; i < (int)meshmodel->numtriangles; i++){
-        v.clear();
-        faceneighboredgetail = faceNeighborEdge[i];
-        while(faceneighboredgetail){
-            fIndex = faceneighboredgetail->data;
-            if(i != fIndex){
-                if(1 == checkCommonVerticeOfNeighborFace(i, fIndex)){
-                    c = b = a = -1;
-                    for(j = 0;j < 3 && a == -1;j++){
-                        for(k = 0;k < 3 && a == -1;k++){
-                            if(meshmodel->triangles[fIndex].vindices[j] == meshmodel->triangles[i].vindices[k]){
-                                a = meshmodel->triangles[fIndex].vindices[j];
-                            }
-                        }
-                    }
-                    for(j = 0;j < 3;j++){
-                        if(meshmodel->triangles[fIndex].vindices[j] != a){
-                            if(b != -1){
-                                b = meshmodel->triangles[fIndex].vindices[j];
-                            }else{
-                                c = meshmodel->triangles[fIndex].vindices[j];
-                            }
-                        }
-                    }
-                }
-                if(2 == checkCommonVerticeOfNeighborFace(i, fIndex)){
-                    c = b = a =-1;
-                    for(j = 0;j < 3 && a == -1;j++){
-                        for(k = 0;k < 3 && a == -1;k++){
-                            if(meshmodel->triangles[fIndex].vindices[j] == meshmodel->triangles[i].vindices[k]){
-                                break;
-                            }
-                        }
-                        if(k == 3){
-                            a = meshmodel->triangles[fIndex].vindices[j];
-                        }
-                    }
-                    for(j = 0;j < 3;j++){
-                        if(meshmodel->triangles[fIndex].vindices[j] != a){
-                            if(b != -1){
-                                b = meshmodel->triangles[fIndex].vindices[j];
-                            }else{
-                                c = meshmodel->triangles[fIndex].vindices[j];
-                            }
-                        }
-                    }
-                }
-                v.push_back(a);
-                v.push_back(b);
-                v.push_back(c);
-            }
-            faceneighboredgetail = faceneighboredgetail->next;
-        }
-        std::sort(v.begin(), v.end());
-        num  = std::unique(v.begin(), v.end()) - v.begin();
-        insertList(faceNeighborEdge, i, v, num);
-    }
-}
-
-void L0::delFaceNeighborEdge()
-{
-    if(faceNeighborEdge){
-        for(int i = 0; i < (int)meshmodel->numtriangles;i++){
-            if(NULL != faceNeighborEdge[i]){
-                removeList(faceNeighborEdge[i]);
-            }
-            faceNeighborEdge[i] = NULL;
-        }
-        delete []faceNeighborEdge;
-        faceNeighborEdge = NULL;
-    }
-}
 
 
 void L0::initFaceVector()

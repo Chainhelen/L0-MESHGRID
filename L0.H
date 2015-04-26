@@ -32,7 +32,6 @@ class L0{
         List **faceFirstNeighborFace;
         List **faceSecondNeighborFace;
         List **faceAllNeighborFace;
-        List **faceNeighborEdge;
 
         Edge *edge;
 
@@ -62,10 +61,6 @@ class L0{
         //面的所有领域点
         void initFaceAllNeighborFace();
         void delFaceAllNeighborFace();
-
-        //面领域与周围面片的边内积
-        void initFaceNeighborEdge(List **faceNeighborFace);
-        void delFaceNeighborEdge();
 
         //init法相不具有初始法相
         void initFaceVector();
