@@ -10,7 +10,6 @@ L0ByTowNeighborFaceVector::L0ByTowNeighborFaceVector(GLMmodel *originmeshmodel, 
 {
     info = NULL;
     faceNeighborFace = NULL;
-    faceSpreadNeighborFace = NULL;
     p = NULL;
     v = NULL;
 }
@@ -41,7 +40,6 @@ L0ByTowNeighborFaceVector::~L0ByTowNeighborFaceVector()
     delFaceNeighborFace();
 
     faceNeighborFace = NULL;
-    faceSpreadNeighborFace = NULL;
 }
 
 GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
@@ -65,7 +63,7 @@ GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double pl
 
     chooseTypeOfNeighbor();
 
-    SubSolving s_l0(faceSpreadNeighborFace, info, infocnt, arinfocnt, (int)meshmodel->numtriangles);
+    SubSolving s_l0(faceNeighborFace, info, infocnt, arinfocnt, (int)meshmodel->numtriangles);
     s_l0.init();
 
     while(cc <= pmaxtimes ){
@@ -77,7 +75,7 @@ GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double pl
             sum = 0.0;
             for(j = 0;j < info[i][0].cnt;j++){
                 for(k = 0;k < 3;k++){
-                    tsum[k] += p[k][info[i][j].data] * info[i][j].w;
+                    tsum[k] += info[i][j].w * faceVector[k][info[i][j].data];
                 }
             }
             for(j = 0;j < 3;j++){
@@ -124,6 +122,7 @@ GLMmodel* L0ByTowNeighborFaceVector::doL0(double parpha, double pbeta, double pl
         beta = beta * sqrt(2);
         arpha = arpha / 2;
     }
+    recoveryVerticesByFaceVector();
 
     delVector(faceVector);
     faceVector = NULL;
@@ -178,7 +177,6 @@ void L0ByTowNeighborFaceVector::initInfo()
             info[i][j].w = 0.0;
         }
         edgetail = edgetail->next;
-        i++;
     }
     edgetail = NULL;
 }
@@ -226,7 +224,7 @@ void L0ByTowNeighborFaceVector::getPV()
     }
     for(i = 0;i < 3;i++){
         for(j = 0;j < (int)meshmodel->numtriangles;j++){
-            p[i][j] = faceVector[j][i];
+            p[i][j] = faceVector[i][j];
             v[i][j] = 0;
         }
     }

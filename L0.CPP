@@ -733,9 +733,8 @@ void L0::getEdge()
                             edgetail->p[3] = trip4index.vindices[j] - 1;
                         }
                     }
-                    edgetail->f[0] = min(verticestindicestail11->index,verticestindicestail22->index);
-                    edgetail->f[1] = max(verticestindicestail11->index,verticestindicestail22->index);
-
+					edgetail->f[0] = min(verticestindicestail11->index,verticestindicestail22->index);
+					edgetail->f[1] = max(verticestindicestail11->index,verticestindicestail22->index);
                 }
                 verticestindicestail22 = verticestindicestail22->next;
             }
@@ -756,15 +755,11 @@ void L0::delEdge(){
 Edge *L0::createEdgeNode()
 {
     Edge *s = new Edge();
-    int i;
     if(s == NULL){
         printf("error at L0::createEdgeNode\n");
     }
-    for(i = 0;i < 4;i++){
+    for(int i = 0;i < 4;i++){
         s->p[i] = 0;
-    }
-    for(i = 0;i < 2;i++){
-        s->f[i] = 0;
     }
     s->next = NULL;
     return s;

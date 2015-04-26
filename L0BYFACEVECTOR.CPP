@@ -79,7 +79,7 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
     double distw, normw, areaw;
     double wsum;
 
-    int ftemp = 8;
+    int ftemp = MAX_TMP;
     while(ftemp--){
         updateFaceVector();
         for(i = 0;i < (int)meshmodel->numtriangles;i++){
@@ -149,7 +149,37 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
 
 #endif
 
-    getPV();
+    p = new double*[3];
+    v = new double*[3];
+
+    if(NULL == p || NULL == v){
+        return NULL;
+    }
+
+    for(i = 0;i < 3;i++){
+
+        p[i] = new double[(int)meshmodel->numtriangles + infocnt];
+        v[i] = new double[(int)meshmodel->numtriangles];
+
+        if(NULL == p[i] || NULL == v[i]){
+            printf("Error in L0ByEdge::doL0----- p[%d] , v[%d]\n",i,i);
+            return NULL;
+        }
+    }
+
+    for(i = 0;i < 3;i++){
+        for(j = 0;j < (int)meshmodel->numtriangles;j++){
+            p[i][j] = faceVector[i][j];
+            v[i][j] = faceVector[i][j];
+        }
+    }
+
+    for(i = 0;i < 3;i++){
+        for(j = (int)meshmodel->numtriangles;j < (int)meshmodel->numtriangles + arinfocnt;j++){
+            p[i][j] = 0.0;
+        }
+    }
+
     SubSolving s_l0(faceSpreadNeighborFace, info, infocnt, arinfocnt, (int)meshmodel->numtriangles);
     s_l0.init();
 
@@ -226,7 +256,10 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
             arpha = arpha / 2;
         }
 
-
+        RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
+        myRecovery.changeModel(model);
+        myRecovery.changeFaceVector(faceVector);
+        myRecovery.doL2(2);
     }
 
 
@@ -384,40 +417,6 @@ void L0ByFaceVector::delInfo()
         info = NULL;
     }
 }
-void L0ByFaceVector::getPV()
-{
-    int i, j;
-    p = new double*[3];
-    v = new double*[3];
-
-    if(NULL == p || NULL == v){
-        return ;
-    }
-
-    for(i = 0;i < 3;i++){
-
-        p[i] = new double[(int)meshmodel->numtriangles + infocnt];
-        v[i] = new double[(int)meshmodel->numtriangles];
-
-        if(NULL == p[i] || NULL == v[i]){
-            printf("Error in L0ByEdge::doL0----- p[%d] , v[%d]\n",i,i);
-            return ;
-        }
-    }
-
-    for(i = 0;i < 3;i++){
-        for(j = 0;j < (int)meshmodel->numtriangles;j++){
-            p[i][j] = faceVector[i][j];
-            v[i][j] = faceVector[i][j];
-        }
-    }
-
-    for(i = 0;i < 3;i++){
-        for(j = (int)meshmodel->numtriangles;j < (int)meshmodel->numtriangles + arinfocnt;j++){
-            p[i][j] = 0.0;
-        }
-    }
-}
 
 void L0ByFaceVector::delFaceNeighborFace()
 {
@@ -487,15 +486,6 @@ void L0ByFaceVector::delFaceSpreadNeighborFace()
 
 void L0ByFaceVector::recoveryVerticesByFaceVector()
 {
-    //L2
-    RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
-    myRecovery.changeModel(model);
-    myRecovery.changeFaceVector(faceVector);
-    myRecovery.doL2(2);
-
-    return ;
-
-    //
     int i, j ,k;
     double *newmodel = new double[(int)meshmodel->numvertices * 3];
     if(NULL == newmodel){

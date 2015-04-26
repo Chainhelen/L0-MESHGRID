@@ -23,7 +23,7 @@ struct Info{
 
 struct Edge{
     int p[4];
-    int f[2];
+	int f[2];
     Edge *next;
 };
 

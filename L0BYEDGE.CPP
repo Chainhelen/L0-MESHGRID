@@ -42,7 +42,34 @@ GLMmodel* L0ByEdge::doL0(double parpha, double pbeta, double plambda, int pmaxti
     initInfo();
     delEdge();
 
-    getPV();
+    p = new double*[3];
+    v = new double*[3];
+    if(NULL == p || NULL == v){
+        printf("Error in L0ByEdge::doL0----- p , v\n");
+        return NULL;
+    }
+
+    for(i = 0;i < 3;i++){
+
+        p[i] = new double[(int)meshmodel->numvertices + infocnt];
+        v[i] = new double[(int)meshmodel->numvertices];
+
+        if(NULL == p[i] || NULL == v[i]){
+            printf("Error in L0ByEdge::doL0----- p[%d] , v[%d]\n",i,i);
+            return NULL;
+        }
+    }
+    for(i = 0; i < 3;i++){
+        for(j = 0;j < (int)meshmodel->numvertices;j++){
+            p[i][j] = model[3 * j + i];
+            v[i][j] = model[3 * j + i];
+        }
+    }
+    for(i = (int)meshmodel->numvertices;i < (int)meshmodel->numvertices + arinfocnt;i++){
+        for(j = 0;j < 3;j++){
+            p[j][i] = 0;
+        }
+    }
     //得到排序后二环领域，包括自身点
     initVerSpreadNeighborVer();
 
@@ -105,39 +132,6 @@ GLMmodel* L0ByEdge::doL0(double parpha, double pbeta, double plambda, int pmaxti
         }
     }
     return meshmodel;
-}
-
-void L0ByEdge::getPV()
-{
-    int i, j;
-    p = new double*[3];
-    v = new double*[3];
-    if(NULL == p || NULL == v){
-        printf("Error in L0ByEdge::doL0----- p , v\n");
-        return ;
-    }
-
-    for(i = 0;i < 3;i++){
-
-        p[i] = new double[(int)meshmodel->numvertices + infocnt];
-        v[i] = new double[(int)meshmodel->numvertices];
-
-        if(NULL == p[i] || NULL == v[i]){
-            printf("Error in L0ByEdge::doL0----- p[%d] , v[%d]\n",i,i);
-            return ;
-        }
-    }
-    for(i = 0; i < 3;i++){
-        for(j = 0;j < (int)meshmodel->numvertices;j++){
-            p[i][j] = model[3 * j + i];
-            v[i][j] = model[3 * j + i];
-        }
-    }
-    for(i = (int)meshmodel->numvertices;i < (int)meshmodel->numvertices + arinfocnt;i++){
-        for(j = 0;j < 3;j++){
-            p[j][i] = 0;
-        }
-    }
 }
 
 void L0ByEdge::initInfo()

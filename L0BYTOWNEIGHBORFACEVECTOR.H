@@ -7,7 +7,6 @@ class L0ByTowNeighborFaceVector : public L0{
     public:
         Info **info;
         List **faceNeighborFace;
-        List **faceSpreadNeighborFace;
         double **p;
         double **v;
     public:

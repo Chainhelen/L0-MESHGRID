@@ -15,6 +15,5 @@ class L0ByEdge : public L0{
         void initInfo();
         void updateInfo();
         void delInfo();
-        void getPV();
 };
 #endif
