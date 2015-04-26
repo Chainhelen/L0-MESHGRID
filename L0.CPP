@@ -396,7 +396,7 @@ void L0::initFaceNeighborEdge(List **faceNeighborFace)
                     c = b = a = -1;
                     for(j = 0;j < 3 && a == -1;j++){
                         for(k = 0;k < 3 && a == -1;k++){
-                            if(meshmodel->triangles[fIndex].vindices[j] = meshmodel->triangles[i].vindices[k]){
+                            if(meshmodel->triangles[fIndex].vindices[j] == meshmodel->triangles[i].vindices[k]){
                                 a = meshmodel->triangles[fIndex].vindices[j];
                             }
                         }
@@ -420,7 +420,7 @@ void L0::initFaceNeighborEdge(List **faceNeighborFace)
                             }
                         }
                         if(k == 3){
-                            a = meshmodel->triangles[i].vindices[k];
+                            a = meshmodel->triangles[fIndex].vindices[j];
                         }
                     }
                     for(j = 0;j < 3;j++){
@@ -447,6 +447,16 @@ void L0::initFaceNeighborEdge(List **faceNeighborFace)
 
 void L0::delFaceNeighborEdge()
 {
+    if(faceNeighborEdge){
+        for(int i = 0; i < (int)meshmodel->numtriangles;i++){
+            if(NULL != faceNeighborEdge[i]){
+                removeList(faceNeighborEdge[i]);
+            }
+            faceNeighborEdge[i] = NULL;
+        }
+        delete []faceNeighborEdge;
+        faceNeighborEdge = NULL;
+    }
 }
 
 
@@ -465,7 +475,7 @@ void L0::initFaceVector()
     }
 
     for(i = 0;i < 3;i++){
-        faceVector[i] =new double [(int)meshmodel->numtriangles];
+        faceVector[i] = new double [(int)meshmodel->numtriangles];
         if(NULL == faceVector[i]){
             printf("error in L0::initFaceVector ------->faceVector[%d]\n",i);
             return ;
@@ -486,7 +496,7 @@ void L0::initVerVector()
         return ;
     }
     for(i = 0;i < 3;i++){
-        verVector[i] =new double [(int)meshmodel->numtriangles];
+        verVector[i] = new double [(int)meshmodel->numtriangles];
         if(NULL == verVector[i]){
             printf("error in L0::initFaceVector ------->verVector[%d]\n",i);
             return ;
