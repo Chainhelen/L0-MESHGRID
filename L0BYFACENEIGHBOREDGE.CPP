@@ -14,6 +14,7 @@ L0ByFaceNeighborEdge::L0ByFaceNeighborEdge(GLMmodel *originmeshmodel, IndexList 
     info = NULL;
     faceNeighborFace = NULL;
     infoToFaceIndex = NULL;
+    verNeighborThreeVer = NULL;
     p = NULL;
     v = NULL;
 }
@@ -36,25 +37,140 @@ L0ByFaceNeighborEdge::~L0ByFaceNeighborEdge()
     delInfo();
     delFaceNeighborFace();
 
+    delVector(faceVector);
+    faceVector = NULL;
+
+    delVerNeighborThreeVer();
+
     info = NULL;
     faceNeighborFace = NULL;
 }
 
 GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
 {
+    int i, j;
     arpha = parpha;
     beta = pbeta;
     lambda = plambda;
     maxtimes = pmaxtimes;
     int cc = 1;
+    double sum;
+
+    initVerNeighborVer();
+    initVerNeighborThreeVer();
 
     chooseTypeOfNeighbor();
+    initFaceVector();
+    updateFaceVector();
     initInfo();
+    updateInfo();
+
+    getPV();
+
+    SubSolving s_l0(verNeighborThreeVer, info, infocnt, arinfocnt, (int)meshmodel->numvertices * 3);
+    s_l0.init();
 
     while(cc <= pmaxtimes){
+        updateInfo();
+        for(i = arinfocnt;i < infocnt;i++){
+            sum = 0.0;
+            for(j = 0;j < 6;j++){
+                sum += model[info[i][j].data] * info[i][j].w;
+            }
+            if(sum * sum <= lambda / beta){
+                p[i + (int)meshmodel->numvertices * 3] = 0.0;
+            }else{
+                p[i + (int)meshmodel->numvertices * 3] = sum * beta;
+            }
+        }
+        s_l0.getParameter(p, v, info, beta, arpha);
+        s_l0.update();
+        s_l0.slove();
 
+        for(i = 0;i < (int)meshmodel->numvertices * 3;i++){
+            model[i] = v[i];
+        }
+        cc++;
+        beta = beta * sqrt(2);
+        arpha = arpha / 2;
     }
-    return NULL;
+
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        for(j = 0;j < 3;j++){
+            meshmodel->vertices[3 * (i + 1) + j] = model[3 * i + j];
+        }
+    }
+    return meshmodel;
+}
+
+void L0ByFaceNeighborEdge::initVerNeighborThreeVer()
+{
+    List *verneighborvertail = NULL;
+    int i, j, num;
+    vector<int>v;
+    verNeighborThreeVer = new List*[(int)meshmodel->numvertices * 3];
+
+    if(NULL == verNeighborThreeVer){
+        printf("L0ByFaceNeighborEdge::initVerNeighborThreeVer\n");
+        return;
+    }
+
+    for(i = 0;i < (int)meshmodel->numvertices * 3;i++){
+        verNeighborThreeVer[i] = NULL;
+    }
+
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        verneighborvertail = verNeighborVer[i];
+        v.clear();
+        while(verneighborvertail){
+            for(j = 0;j < 3;j++){
+                v.push_back(3 * verneighborvertail->data + j);
+            }
+            verneighborvertail =verneighborvertail->next;
+        }
+        num  = (int)v.size();
+        for( j = 0;j < 3;j++){
+            insertList(verNeighborThreeVer, 3 * i + j, v, num);
+        }
+    }
+    verneighborvertail = NULL;
+}
+
+void L0ByFaceNeighborEdge::delVerNeighborThreeVer()
+{
+    int i;
+
+	if(verNeighborThreeVer){
+		for(i = 0;i < (int)meshmodel->numvertices * 3;i++){
+			if(verNeighborThreeVer[i])
+				removeList(verNeighborThreeVer[i]);
+			verNeighborThreeVer[i] = NULL;
+		}
+	}
+    if(verNeighborThreeVer){
+        delete []verNeighborThreeVer;
+        verNeighborThreeVer = NULL;
+    }
+}
+
+void L0ByFaceNeighborEdge::getPV()
+{
+    p = new double [(int)meshmodel->numvertices * 3 + infocnt];
+    v = new double [(int)meshmodel->numvertices * 3];
+
+    if(NULL == p || NULL == v){
+        printf("error at L0ByFaceNeighborEdge::getPV\n");
+        return ;
+    }
+    int i, j;
+
+    for(i = 0;i < (int)meshmodel->numvertices * 3;i++){
+        p[i] = model[i];
+        v[i] = model[i];
+    }
+    for(i = 0;i < infocnt;i++){
+        p[i + (int)meshmodel->numvertices * 3] = 0.0;
+    }
 }
 
 void L0ByFaceNeighborEdge::chooseTypeOfNeighbor()
@@ -136,7 +252,7 @@ void L0ByFaceNeighborEdge::initInfo()
                     }
                     for(j = 0;j < 3;j++){
                         if(meshmodel->triangles[fIndex].vindices[j] != a){
-                            if(b != -1){
+                            if(b == -1){
                                 b = meshmodel->triangles[fIndex].vindices[j];
                             }else{
                                 c = meshmodel->triangles[fIndex].vindices[j];
@@ -158,7 +274,7 @@ void L0ByFaceNeighborEdge::initInfo()
                     }
                     for(j = 0;j < 3;j++){
                         if(meshmodel->triangles[fIndex].vindices[j] != a){
-                            if(b != -1){
+                            if(b == -1){
                                 b = meshmodel->triangles[fIndex].vindices[j];
                             }else{
                                 c = meshmodel->triangles[fIndex].vindices[j];
@@ -166,6 +282,9 @@ void L0ByFaceNeighborEdge::initInfo()
                         }
                     }
                 }
+                a--,b--,c--;
+                if(a == -1 || b == -1 || c == -1)
+                    printf("num = %d\ni = %d\n",num,i);
                 info[num] = new Info[6];
                 if(NULL == info[num]){
                     printf("error at L0ByFaceneighborFace--->info[%d]\n",num);

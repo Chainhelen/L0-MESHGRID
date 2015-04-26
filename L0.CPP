@@ -21,10 +21,6 @@ L0::L0(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **
 
 L0::~L0()
 {
-    meshmodel = NULL;
-    verticesvindices = NULL;
-    verticestindices = NULL;
-
     if(model){
         delete []model;
         model = NULL;
@@ -45,6 +41,10 @@ L0::~L0()
     delFaceFirstNeighborFace();
     delFaceSecondNeighborFace();
     delFaceAllNeighborFace();
+
+    meshmodel = NULL;
+    verticesvindices = NULL;
+    verticestindices = NULL;
 }
 
 void L0::initModel()

@@ -6,6 +6,7 @@ class L0ByFaceNeighborEdge : public L0{
     public:
         Info **info;
         List **faceNeighborFace;
+        List **verNeighborThreeVer;
         double *p;
         double *v;
         int *infoToFaceIndex;
@@ -14,6 +15,9 @@ class L0ByFaceNeighborEdge : public L0{
         ~L0ByFaceNeighborEdge();
         GLMmodel* doL0(double parpha, double pbeta, double plambda, int pmaxtimes);
 
+        void initVerNeighborThreeVer();
+        void delVerNeighborThreeVer();
+        void getPV();
         void chooseTypeOfNeighbor();
         void delFaceNeighborFace();
         void initInfo();
