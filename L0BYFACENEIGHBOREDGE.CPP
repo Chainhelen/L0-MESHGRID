@@ -1,12 +1,9 @@
 #include "L0BYFACENEIGHBOREDGE.H"
 
 //#define FIRSTFACENEIGHBORFACE
-//#define SECONDFACENEIGHBORFACE
-#define ALLFACENEIGHBORFACE
+#define SECONDFACENEIGHBORFACE
+//#define ALLFACENEIGHBORFACE
 
-//#define TESTZHENG_LOCAL
-//#define TEST2
-#define  MAX_TMP 1
 
 L0ByFaceNeighborEdge::L0ByFaceNeighborEdge(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
         :L0(originmeshmodel, originverticesvindices, originverticestindices)
@@ -283,8 +280,7 @@ void L0ByFaceNeighborEdge::initInfo()
                     }
                 }
                 a--,b--,c--;
-                if(a == -1 || b == -1 || c == -1)
-                    printf("num = %d\ni = %d\n",num,i);
+
                 info[num] = new Info[6];
                 if(NULL == info[num]){
                     printf("error at L0ByFaceneighborFace--->info[%d]\n",num);
