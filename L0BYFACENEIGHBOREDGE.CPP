@@ -52,6 +52,7 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
     maxtimes = pmaxtimes;
     int cc = 1;
     double sum;
+    List *tail = NULL;
 
     initVerNeighborVer();
     initVerNeighborThreeVer();
@@ -59,6 +60,7 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
     chooseTypeOfNeighbor();
     initFaceVector();
     updateFaceVector();
+
     initInfo();
     updateInfo();
 
@@ -68,6 +70,7 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
     s_l0.init();
 
     while(cc <= pmaxtimes){
+        updateFaceVector();
         updateInfo();
         for(i = arinfocnt;i < infocnt;i++){
             sum = 0.0;
@@ -84,9 +87,12 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
         s_l0.update();
         s_l0.slove();
 
-        for(i = 0;i < (int)meshmodel->numvertices * 3;i++){
-            model[i] = v[i];
+        for(i = 0;i < (int)meshmodel->numvertices;i++){
+            for(j = 0;j < 3;j++){
+                model[3 * i + j] = v[3 * i + j];
+            }
         }
+		printf("%d time\n",cc);
         cc++;
         beta = beta * sqrt(2);
         arpha = arpha / 2;
@@ -126,7 +132,7 @@ void L0ByFaceNeighborEdge::initVerNeighborThreeVer()
             verneighborvertail =verneighborvertail->next;
         }
         num  = (int)v.size();
-        for( j = 0;j < 3;j++){
+        for(j = 0;j < 3;j++){
             insertList(verNeighborThreeVer, 3 * i + j, v, num);
         }
     }
@@ -161,9 +167,12 @@ void L0ByFaceNeighborEdge::getPV()
     }
     int i, j;
 
-    for(i = 0;i < (int)meshmodel->numvertices * 3;i++){
-        p[i] = model[i];
-        v[i] = model[i];
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+		for(j = 0;j < 3;j++)
+		{
+			p[3 * i + j] = model[3 * i + j];
+			v[3 * i + j] = model[3 * i + j];
+		}
     }
     for(i = 0;i < infocnt;i++){
         p[i + (int)meshmodel->numvertices * 3] = 0.0;
@@ -324,10 +333,17 @@ void L0ByFaceNeighborEdge::initInfo()
 void L0ByFaceNeighborEdge::updateInfo()
 {
     int i, j;
+    double len;
     for(i = arinfocnt;i < infocnt;i++){
+        len = getPointDistance(info[i][0].data / 3, info[i][3].data / 3);
+        if(len < 1e-12){
+            printf("ll\n");
+        }
+        len = len > 1e-12 ? len : 1e-12;
+
         for(j = 0;j < 3;j++){
-            info[i][j].w = faceVector[j][infoToFaceIndex[i]];
-            info[i][j + 3].w = -1 * faceVector[j][infoToFaceIndex[i]];
+            info[i][j].w = faceVector[j][infoToFaceIndex[i]] / len;
+            info[i][j + 3].w = -1 * faceVector[j][infoToFaceIndex[i]] / len;
         }
     }
 }

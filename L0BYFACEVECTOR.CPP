@@ -1,12 +1,12 @@
 #include "L0BYFACEVECTOR.H"
 
-//#define FIRSTFACENEIGHBORFACE
+#define FIRSTFACENEIGHBORFACE
 //#define SECONDFACENEIGHBORFACE
-#define ALLFACENEIGHBORFACE
+//#define ALLFACENEIGHBORFACE
 
 //#define TESTZHENG_LOCAL
 //#define TEST2
-#define  MAX_TMP 1
+#define  MAX_TMP 3
 
 L0ByFaceVector::L0ByFaceVector(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
         :L0(originmeshmodel, originverticesvindices, originverticestindices)
@@ -186,6 +186,12 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
     int nn, mm;
     int tempp = MAX_TMP;
     while(tempp--){
+/*        for(i = 0;i < (int)meshmodel->numvertices;i++){*/
+            //for(j = 0;j < 3;j++){
+                //p[j][i] = faceVector[j][i];
+            //}
+        /*}*/
+
        arpha = parpha;
        beta = pbeta;
        lambda = plambda;
@@ -248,15 +254,13 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
                 }
 
             }
-
+			recoveryVerticesByFaceVector();
             printf("%d %d\n",nn,mm);
             printf("%d\t time finished\n",cc);
             cc++;
             beta = beta * sqrt(2);
             arpha = arpha / 2;
         }
-
-        recoveryVerticesByFaceVector();
     }
 
 
@@ -483,13 +487,13 @@ void L0ByFaceVector::delFaceSpreadNeighborFace()
 
 void L0ByFaceVector::recoveryVerticesByFaceVector()
 {
-    RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
+/*    RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
     myRecovery.changeModel(model);
     myRecovery.changeFaceVector(faceVector);
     myRecovery.doL2(2);
 
     return ;
-
+*/
     int i, j ,k;
     double *newmodel = new double[(int)meshmodel->numvertices * 3];
     if(NULL == newmodel){

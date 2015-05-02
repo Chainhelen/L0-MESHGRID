@@ -1,5 +1,5 @@
 #include "L0ByVerNormal.h"
-#include "RecoveryByVerNormalL0.h"
+#include "RecoveryByVerNormalL0"
 
 L0ByVerNormal::L0ByVerNormal(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
         :L0(originmeshmodel, originverticesvindices, originverticestindices)
@@ -15,7 +15,7 @@ L0ByVerNormal::~L0ByVerNormal()
     if(p){
         for(i = 0;i < 3;i++){
             delete []p[i];
-            p[i] = NULL;
+            p = NULL;
         }
         delete []p;
         p = NULL;
@@ -24,7 +24,7 @@ L0ByVerNormal::~L0ByVerNormal()
     if(v){
         for(i = 0;i < 3;i++){
             delete []v[i];
-            v[i] = NULL;
+            v = NULL;
         }
         delete []v;
         v = NULL;
@@ -36,7 +36,6 @@ L0ByVerNormal::~L0ByVerNormal()
 
 GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
 {
-
     int i,j,k;
     arpha = parpha;
     beta = pbeta;
@@ -51,7 +50,6 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
     initVerSpreadNeighborVer();
     //点法向
     initVerVector();
-    updateVerVectorByArea();
 
     initInfo();
     updateInfo();
@@ -60,12 +58,10 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
     SubSolving s_l0(verSpreadNeighborVer, info, infocnt, arinfocnt, (int)meshmodel->numvertices);
     s_l0.init();
 
-    int nn, mm;
     while(cc <= pmaxtimes){
-        mm = nn = 0;
         updateInfo();
 
-        for(i = 0;i < (int)meshmodel->numvertices;i++){
+        for(i = arinfocnt;i < infocnt;i++){
             sum = 0.0;
             for(j = 0;j < 3;j++){
                 tsum[j] = 0.0;
@@ -80,11 +76,9 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
                 sum += tsum[k] * tsum[k];
             }
             if(sum <= lambda / beta){
-                nn++;
                 for(k = 0;k < 3;k++)
                     p[k][i + (int)meshmodel->numvertices] = 0.0;
             }else{
-                mm++;
                 for(k = 0;k < 3;k++)
                     p[k][i + (int)meshmodel->numvertices] = beta * tsum[k];
             }
@@ -102,23 +96,11 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
                 verVector[i][j] = v[i][j];
             }
         }
-        for(i = 0; i < (int)meshmodel->numvertices;i++){
-            sum = 0.0;
-            for(j = 0;j < 3;j++){
-                sum += verVector[j][i] * verVector[j][i];
-            }
-            sum = sqrt(sum);
-            sum = sum > 1e-12 ? sum : 1e-12;
-            for(j = 0;j < 3;j++){
-                verVector[j][i] = verVector[j][i] / sum;
-            }
-        }
 
         cc++;
         beta *= sqrt(2);
         arpha *= 2;
     }
-
     printf("finished\n");
 
     recoveryVerticesByVerNormal();
@@ -135,7 +117,7 @@ void L0ByVerNormal::getPV()
         return ;
     }
     for(i = 0;i < 3;i++){
-        p[i] = new double[(int)meshmodel->numvertices + (int)meshmodel->numvertices];
+        p[i] = new double[(int)meshmodel->numvertices];
         v[i] = new double[(int)meshmodel->numvertices];
 
         if(NULL == p[i] || NULL == v[i]){
@@ -150,8 +132,8 @@ void L0ByVerNormal::getPV()
         }
     }
     for(i = 0;i < 3;i++){
-        for(j = 0;j < infocnt;j++){
-            p[i][j + (int)meshmodel->numvertices] = 0.0;
+        for(j = (int)meshmodel->numvertices;j < infocnt;j++){
+            p[i][j] = 0.0;
         }
     }
 }
@@ -193,20 +175,12 @@ void L0ByVerNormal::initInfo()
             info[i][j].cnt = (int)v.size();
         }
     }
-/*    printf("info================\n");*/
-    //for(i = 0; i< (int)meshmodel->numvertices;i++){
-        //printf("%d\n",i);
-        //for(j = 0;j < (int)info[i][j].cnt;j++){
-            //printf("\t%lf %d %d\n",info[i][j].w,info[i][j].data,info[i][j].cnt);
-        //}
-    //}
-    /*printf("----------------------\n");*/
     verneighborvertail = NULL;
 }
 
 void L0ByVerNormal::updateInfo()
 {
-    int i, j, k;
+    int i, j;
     vector<double>distv;
     vector<double>anglev;
     double sum = 0.0,tm = 0.0;
@@ -217,7 +191,7 @@ void L0ByVerNormal::updateInfo()
         sum = 0.0;
 
         for(j = 0;j < info[i][j].cnt;j++){
-            if(i != info[i][j].data){
+            if(j != info[i][j].data){
                 tm = getPointDistance(i, info[i][j].data);
                 distv.push_back(tm);
                 sum += tm;
@@ -225,12 +199,9 @@ void L0ByVerNormal::updateInfo()
         }
         sum = sum > 1e-12 ? sum : 1e-12;
 
-        k = 0;
         for(j = 0;j < info[i][j].cnt;j++){
-            if(i != info[i][j].data){
-                info[i][j].w = -1 * distv[k] / sum;
-//                info[i][j].w = -1 / (int)distv.size();
-                k++;
+            if(j != info[i][j].data){
+                info[i][j].w = -1 * distv[j] / sum;
             }else{
                 info[i][j].w = 1;
             }
@@ -252,15 +223,7 @@ void L0ByVerNormal::delInfo()
 
 void L0ByVerNormal::recoveryVerticesByVerNormal()
 {
-    printf("vernum = %d\ntrinum = %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
-    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices, verVector);
-
-    getEdge();
-    initVerNeighborVer();
-
-    myrecoverybyl0.getParameter(verNeighborVer, edgeNum, edge);
+    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices, vervector);
+    myrecoverybyl0.getParameter(verRelation, infocnt, verInfo);
     myrecoverybyl0.slove();
-
-    delVerNeighborVer();
-    delEdge();
 }

@@ -389,6 +389,7 @@ void L0::initVerVector()
 {
     int i;
     if(verVector){
+        return ;
         delVector(verVector);
         verVector = NULL;
     }
@@ -430,7 +431,7 @@ void L0::updateVerVectorByArea()
     IndexList *ftail = NULL;
 
     //若没有面法相
-    if(faceVector){
+    if(NULL == faceVector){
         faceVectorFlag = true;
 
         initFaceVector();
@@ -438,7 +439,7 @@ void L0::updateVerVectorByArea()
     }
 
     for(verindex = 0; verindex < (int)meshmodel->numvertices; verindex++){
-        ftail = verticesvindices[verindex];
+        ftail = verticestindices[verindex + 1];
         for(i = 0;i < 3;i++){
             verVector[i][verindex] = 0;
         }

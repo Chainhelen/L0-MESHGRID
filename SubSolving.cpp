@@ -117,7 +117,6 @@ void SubSolving::getATMem()
             s = NULL;
         }
     }
-
     sparsetail = NULL;
 }
 
