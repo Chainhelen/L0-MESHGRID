@@ -7,9 +7,18 @@ class L0ByVerNormal : public L0{
         Info **info;
         double **p;
         double **v;
+        GLMmodel *guidedmesh;
+        double **guidedmeshVerNormal;
+        double **guidedmeshFaceNormal;
+
     public:
         L0ByVerNormal(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **originverticestindices);
         ~L0ByVerNormal();
+
+        void getGuidedmesh(GLMmodel *pGuidedmesh);
+        void initGuidedmeshFaceNormal();
+        void initGuidedmeshVerNormal();
+
         GLMmodel* doL0(double parpha, double pbeta, double plambda, int pmaxtimes);
 
         void getPV();
