@@ -114,14 +114,15 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
             }
         }
 
+		recoveryVerticesByVerNormal();
+		printf("%d\ttime finished\n",cc);
         cc++;
         beta *= sqrt(2);
         arpha *= 2;
     }
 
     printf("finished\n");
-
-    recoveryVerticesByVerNormal();
+	
     return meshmodel;
 }
 
@@ -228,8 +229,8 @@ void L0ByVerNormal::updateInfo()
         k = 0;
         for(j = 0;j < info[i][j].cnt;j++){
             if(i != info[i][j].data){
-                info[i][j].w = -1 * distv[k] / sum;
-//                info[i][j].w = -1 / (int)distv.size();
+ //               info[i][j].w = -1 * distv[k] / sum;
+                info[i][j].w = -1 / (int)distv.size();
                 k++;
             }else{
                 info[i][j].w = 1;

@@ -54,7 +54,7 @@ RecoveryByVerNormalL0::~RecoveryByVerNormalL0()
 void RecoveryByVerNormalL0::slove()
 {
     int i, j;
-    int maxtimes = 1;
+    int maxtimes = 10;
     double beta = 0.7;
     double arpha = 0;
     double lambda = 0.0003;
@@ -86,10 +86,9 @@ void RecoveryByVerNormalL0::slove()
             {
                 sum += info[i][j].w * v[info[i][j].data];
             }
-//            if(sum * sum <= lambda / beta)
-if(1)
+            if(sum * sum <= lambda / beta)
             {
-                p[i + (int)meshmodel->numvertices * 3] = 0;
+                p[i + (int)meshmodel->numvertices * 3] = 0.0;
             }
             else
             {

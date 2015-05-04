@@ -4,6 +4,8 @@
 #define SECONDFACENEIGHBORFACE
 //#define ALLFACENEIGHBORFACE
 
+//#define ADD_ARPHA
+
 
 L0ByFaceNeighborEdge::L0ByFaceNeighborEdge(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
         :L0(originmeshmodel, originverticesvindices, originverticestindices)
@@ -54,7 +56,12 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
     double sum;
     List *tail = NULL;
 
+#ifdef ADD_ARPHA
+    initVerSpreadNeighborVer();
+#else
     initVerNeighborVer();
+#endif
+
     initVerNeighborThreeVer();
 
     chooseTypeOfNeighbor();
@@ -69,7 +76,9 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
     SubSolving s_l0(verNeighborThreeVer, info, infocnt, arinfocnt, (int)meshmodel->numvertices * 3);
     s_l0.init();
 
+	int nn,mm;
     while(cc <= pmaxtimes){
+		nn = mm = 0;
         updateFaceVector();
         updateInfo();
         for(i = arinfocnt;i < infocnt;i++){
@@ -78,8 +87,10 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
                 sum += model[info[i][j].data] * info[i][j].w;
             }
             if(sum * sum <= lambda / beta){
+				nn++;
                 p[i + (int)meshmodel->numvertices * 3] = 0.0;
             }else{
+				mm++;
                 p[i + (int)meshmodel->numvertices * 3] = sum * beta;
             }
         }
@@ -92,7 +103,7 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
                 model[3 * i + j] = v[3 * i + j];
             }
         }
-		printf("%d time\n",cc);
+		printf("%d time\n%d %d\n",cc,nn,mm);
         cc++;
         beta = beta * sqrt(2);
         arpha = arpha / 2;
@@ -123,7 +134,11 @@ void L0ByFaceNeighborEdge::initVerNeighborThreeVer()
     }
 
     for(i = 0;i < (int)meshmodel->numvertices;i++){
+#ifdef ADD_ARPHA
+        verneighborvertail = verSpreadNeighborVer[i];
+#else
         verneighborvertail = verNeighborVer[i];
+#endif
         v.clear();
         while(verneighborvertail){
             for(j = 0;j < 3;j++){
@@ -199,6 +214,7 @@ void L0ByFaceNeighborEdge::chooseTypeOfNeighbor()
 
 void L0ByFaceNeighborEdge::delFaceNeighborFace()
 {
+
 #ifdef FIRSTFACENEIGHBORFACE
     delFaceFirstNeighborFace();
 #endif
@@ -232,6 +248,15 @@ void L0ByFaceNeighborEdge::initInfo()
         infocnt--;
     }
     infocnt *= 2;
+#ifdef ADD_ARPHA
+    getEdge();
+    arinfocnt = edgeNum;
+#else
+    arinfocnt = 0;
+#endif
+
+    num = 0;
+    infocnt += arinfocnt;
 
     info = new Info*[infocnt];
     infoToFaceIndex = new int[infocnt];
@@ -239,8 +264,28 @@ void L0ByFaceNeighborEdge::initInfo()
         printf("error in L0BYFaceNeighborEdge\n");
         return ;
     }
+    //arpha
+    if(0 != arinfocnt){
+        Edge *tail = edge;
+        while(tail){
+            info[num] = new Info[12];
+            if(NULL == info[num]){
+                printf("error at L0ByFaceneighborFace--->info[%d]\n",num);
+                return ;
+            }
+            for(i = 0;i < 4;i++){
+                for(j = 0;j < 3;j++){
+                    info[num][3 * i + j].cnt = 12;
+                    info[num][3 * i + j].data = 3 * tail->p[i] + j;
+                    info[num][3 * i + j].w = 0.0;
+                }
+            }
+            num++;
+            tail = tail->next;
+        }
+        delEdge();
+    }
 
-    num = 0;
     for(i = 0; i < (int)meshmodel->numtriangles; i++){
         v.clear();
         faceneighborfacetail = faceNeighborFace[i];
@@ -334,11 +379,22 @@ void L0ByFaceNeighborEdge::updateInfo()
 {
     int i, j;
     double len;
+    for(i = 0;i < arinfocnt;i++){
+        int ff = -1;
+        for(j = 0;j < info[i][0].cnt;j++){
+            if(j % 3 == 0){
+                ff *= -1;
+            }
+            info[i][j].w = ff;
+        }
+    }
+
     for(i = arinfocnt;i < infocnt;i++){
         len = getPointDistance(info[i][0].data / 3, info[i][3].data / 3);
-        if(len < 1e-12){
-            printf("ll\n");
-        }
+		if(info[i][0].data / 3 == info[i][3].data / 3)
+		{
+			printf("error\n");
+		}
         len = len > 1e-12 ? len : 1e-12;
 
         for(j = 0;j < 3;j++){
@@ -347,6 +403,7 @@ void L0ByFaceNeighborEdge::updateInfo()
         }
     }
 }
+
 void L0ByFaceNeighborEdge::delInfo()
 {
     int i;
