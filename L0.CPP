@@ -30,10 +30,10 @@ L0::~L0()
         delVector(faceVector);
         faceVector = NULL;
     }
-/*    if(verVector){
+   if(verVector){
         delVector(verVector);
         verVector = NULL;
-    }*/
+    }
 
     delEdge();
     delVerNeighborVer();

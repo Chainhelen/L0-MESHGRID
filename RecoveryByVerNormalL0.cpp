@@ -8,8 +8,6 @@ RecoveryByVerNormalL0::RecoveryByVerNormalL0(GLMmodel *pmeshmodel,IndexList **pv
     verticestindices = pverticestindices;
     verticesvindices = pverticesvindices;
     vervector = pvervector;
-
-
 }
 
 RecoveryByVerNormalL0::~RecoveryByVerNormalL0()

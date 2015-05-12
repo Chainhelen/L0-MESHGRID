@@ -4,7 +4,7 @@
 #define SECONDFACENEIGHBORFACE
 //#define ALLFACENEIGHBORFACE
 
-//#define ADD_ARPHA
+#define ADD_ARPHA
 
 
 L0ByFaceNeighborEdge::L0ByFaceNeighborEdge(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
@@ -47,6 +47,7 @@ L0ByFaceNeighborEdge::~L0ByFaceNeighborEdge()
 
 GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
 {
+	printf("ver %d\nface %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
     int i, j;
     arpha = parpha;
     beta = pbeta;
@@ -103,9 +104,10 @@ GLMmodel* L0ByFaceNeighborEdge::doL0(double parpha, double pbeta, double plambda
                 model[3 * i + j] = v[3 * i + j];
             }
         }
-		printf("%d time\n%d %d\n",cc,nn,mm);
+		printf("%d time\n%d %d\n\t%lf\n",cc,nn,mm,beta);
         cc++;
-        beta = beta * sqrt(2);
+
+		beta = beta * sqrt(2);
         arpha = arpha / 2;
     }
 
@@ -395,7 +397,7 @@ void L0ByFaceNeighborEdge::updateInfo()
 		{
 			printf("error\n");
 		}
-        len = len > 1e-12 ? len : 1e-12;
+        len = len > 1e-3 ? len : 1e-3;
 
         for(j = 0;j < 3;j++){
             info[i][j].w = faceVector[j][infoToFaceIndex[i]] / len;

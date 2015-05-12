@@ -42,14 +42,11 @@ void L0ByVerNormal::initGuidedmeshFaceNormal(){
         v[1] = guidedmesh->vertices[3 * c + 1] - guidedmesh->vertices[3 * a + 1];
         v[2] = guidedmesh->vertices[3 * c + 2] - guidedmesh->vertices[3 * a + 2];
 
-//        printf("zzz %lf %lf %lf\n",u[0],u[1],u[2]);
-//        printf("zzz %lf %lf %lf\n",v[0],v[1],v[2]);
 
         vec[0] = u[1] * v[2] - u[2] * v[1];
         vec[1] = u[2] * v[0] - u[0] * v[2];
         vec[2] = u[0] * v[1] - u[1] * v[0];
 
-//        printf("www %lf %lf %lf\n",vec[0],vec[1],vec[2]);
 
         double sum = 0.0;
         for(j = 0;j < 3;j++){
@@ -64,13 +61,6 @@ void L0ByVerNormal::initGuidedmeshFaceNormal(){
             guidedmeshFaceNormal[j][tindex] = vec[j];
         }
     }
-    /*
-    for(i = 0;i < (int)meshmodel->numtriangles;i++){
-        for(j = 0;j < 3;j++){
-            printf("%lf ",guidedmeshFaceNormal[j][i]);
-        }
-        printf("\n");
-    }*/
 }
 
 void L0ByVerNormal::initGuidedmeshVerNormal(){
@@ -98,12 +88,12 @@ void L0ByVerNormal::initGuidedmeshVerNormal(){
             for(j = 0;j < 3;j++){
                 tsum[j] += guidedmeshFaceNormal[j][tail->index];
             }
-            for(j = 0;j < 3;j++){
-                sum += tsum[j] * tsum[j];
-            }
             tail = tail->next;
         }
 
+        for(j = 0;j < 3;j++){
+            sum += tsum[j] * tsum[j];
+        }
         sum = sqrt(sum);
         sum = sum > 1e-12 ? sum : 1e-12;
 
@@ -111,12 +101,6 @@ void L0ByVerNormal::initGuidedmeshVerNormal(){
             guidedmeshVerNormal[j][i] = tsum[j] / sum;
         }
     }
-/*    for(i = 0;i < (int)meshmodel->numvertices;i++){
-        for(j = 0;j < 3;j++){
-            printf("%lf ",guidedmeshVerNormal[j][i]);
-        }
-        printf("\n");
-    }*/
 }
 
 L0ByVerNormal::~L0ByVerNormal()
@@ -232,8 +216,34 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
         beta *= sqrt(2);
         arpha *= 2;
     }
+    nn = 0;
+    mm = 0;
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        double sum = 0;
+        for(j = 0;j < 3;j++){
+            sum += verVector[j][i] * verVector[j][i];
+        }
+        sum = sqrt(sum);
+        if(fabs(sum - 1.0) > 1e-6){
+            nn++;
+            printf("find1 \n");
+        }
+        sum = 0;
+        for(j = 0;j < 3;j++){
+            sum += guidedmeshVerNormal[j][i] * guidedmeshVerNormal[j][i] ;
+        }
+        sum = sqrt(sum);
+        if(fabs(sum - 1.0) > 1e-6){
+            mm++;
+            printf("find2 \n");
+        }
+    }
+    printf("nn mm %d %d\n",nn,mm);
 
+
+	recoveryVerticesByVerNormal();
     printf("finished\n");
+
 
     return meshmodel;
 }
@@ -306,14 +316,6 @@ void L0ByVerNormal::initInfo()
             info[i][j].cnt = (int)v.size();
         }
     }
-/*    printf("info================\n");*/
-    //for(i = 0; i< (int)meshmodel->numvertices;i++){
-        //printf("%d\n",i);
-        //for(j = 0;j < (int)info[i][j].cnt;j++){
-            //printf("\t%lf %d %d\n",info[i][j].w,info[i][j].data,info[i][j].cnt);
-        //}
-    //}
-    /*printf("----------------------\n");*/
     verneighborvertail = NULL;
 }
 
@@ -365,8 +367,8 @@ void L0ByVerNormal::delInfo()
 
 void L0ByVerNormal::recoveryVerticesByVerNormal()
 {
-    printf("vernum = %d\ntrinum = %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
-    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices, verVector);
+    //printf("vernum = %d\ntrinum = %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
+    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices, guidedmeshVerNormal);
 
     getEdge();
     initVerNeighborVer();
