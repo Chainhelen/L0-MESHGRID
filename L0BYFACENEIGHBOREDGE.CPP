@@ -4,7 +4,8 @@
 #define SECONDFACENEIGHBORFACE
 //#define ALLFACENEIGHBORFACE
 
-#define ADD_ARPHA
+//#define ADD_ARPHA
+//#define AREA_WEIGHT
 
 
 L0ByFaceNeighborEdge::L0ByFaceNeighborEdge(GLMmodel *originmeshmodel, IndexList **originverticesvindices, IndexList **originverticestindices) \
@@ -379,8 +380,20 @@ void L0ByFaceNeighborEdge::initInfo()
 
 void L0ByFaceNeighborEdge::updateInfo()
 {
+
     int i, j;
     double len;
+
+#ifdef AREA_WEIGHT
+    double area;
+    double areasum = 0.0;
+    for(i = 0 ;i < (int)meshmodel->numtriangles;i++){
+        areasum += getAreaByIndex(i);
+    }
+    areasum /= 1.0 * (int)meshmodel->numtriangles;
+    areasum = areasum > 1e-3 ? areasum : 1e-3;
+#endif
+
     for(i = 0;i < arinfocnt;i++){
         int ff = -1;
         for(j = 0;j < info[i][0].cnt;j++){
@@ -393,6 +406,9 @@ void L0ByFaceNeighborEdge::updateInfo()
 
     for(i = arinfocnt;i < infocnt;i++){
         len = getPointDistance(info[i][0].data / 3, info[i][3].data / 3);
+#ifdef AREA_WEIGHT
+        area = getAreaByIndex(infoToFaceIndex[i]);
+#endif
 		if(info[i][0].data / 3 == info[i][3].data / 3)
 		{
 			printf("error\n");
@@ -400,8 +416,12 @@ void L0ByFaceNeighborEdge::updateInfo()
         len = len > 1e-3 ? len : 1e-3;
 
         for(j = 0;j < 3;j++){
-            info[i][j].w = faceVector[j][infoToFaceIndex[i]] / len;
+			info[i][j].w = faceVector[j][infoToFaceIndex[i]] / len;
             info[i][j + 3].w = -1 * faceVector[j][infoToFaceIndex[i]] / len;
+#ifdef AREA_WEIGHT
+            info[i][j].w *= area / areasum;
+			info[i][j + 3].w *= area / areasum;
+#endif
         }
     }
 }

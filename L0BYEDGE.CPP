@@ -31,14 +31,21 @@ L0ByEdge::~L0ByEdge()
 
 GLMmodel* L0ByEdge::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
 {
-    arpha = parpha;
-    beta = pbeta;
-    lambda = plambda;
-    maxtimes = pmaxtimes;
+
     int cc = 1, i, j, k;
     double tsum[3], sum;
     //得到边,求info
     getEdge();
+
+    if(pmaxtimes >= 0){
+        arpha = parpha;
+        beta = pbeta;
+        lambda = plambda;
+        maxtimes = pmaxtimes;
+    }else{
+        autoGetParameter();
+    }
+
     initInfo();
     delEdge();
 
@@ -252,4 +259,27 @@ void L0ByEdge::delInfo()
         delete []info;
         info = NULL;
     }
+}
+
+void L0ByEdge::autoGetParameter()
+{
+    double sumLength = 0,sumAngle = 0;
+    double averageLength = 0.0,averageAngle = 0.0;
+    Edge *edgetail = edge;
+
+    while(edgetail){
+        sumLength += getPointDistance(edgetail->p[0],edgetail->p[2]);
+        sumAngle += getAngleByFaceIndex(edgetail->f[0],edgetail->f[1]);
+        edgetail = edgetail->next;
+    }
+    if(edgeNum <= 0){
+        printf("L0ByEdge::autoGetParameter\n");
+        return ;
+    }
+    averageLength = sumLength / edgeNum;
+    averageAngle = sumAngle / edgeNum;
+    arpha = 0.1 * averageAngle;
+    lambda = 0.02 * averageLength * averageLength * averageAngle;
+    beta = 0.001;
+    maxtimes = 40;
 }
