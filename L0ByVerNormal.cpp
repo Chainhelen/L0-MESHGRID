@@ -53,7 +53,7 @@ void L0ByVerNormal::initGuidedmeshFaceNormal(){
             sum += vec[j] * vec[j];
         }
         sum = sqrt(sum);
-        sum = sum > 1e-12 ? sum : 1e-12;
+        sum = sum > 1e-3 ? sum : 1e-3;
         for(j = 0;j < 3;j++){
             vec[j] /= sum;
         }
@@ -95,7 +95,7 @@ void L0ByVerNormal::initGuidedmeshVerNormal(){
             sum += tsum[j] * tsum[j];
         }
         sum = sqrt(sum);
-        sum = sum > 1e-12 ? sum : 1e-12;
+        sum = sum > 1e-3 ? sum : 1e-3;
 
         for(j = 0;j < 3;j++){
             guidedmeshVerNormal[j][i] = tsum[j] / sum;
@@ -130,8 +130,8 @@ L0ByVerNormal::~L0ByVerNormal()
 
 GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
 {
-    initGuidedmeshFaceNormal();
-    initGuidedmeshVerNormal();
+    //initGuidedmeshFaceNormal();
+    //initGuidedmeshVerNormal();
 
     int i,j,k;
     arpha = parpha;
@@ -204,7 +204,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
                 sum += verVector[j][i] * verVector[j][i];
             }
             sum = sqrt(sum);
-            sum = sum > 1e-12 ? sum : 1e-12;
+            sum = sum > 1e-3 ? sum : 1e-3;
             for(j = 0;j < 3;j++){
                 verVector[j][i] = verVector[j][i] / sum;
             }
@@ -216,6 +216,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
         beta *= sqrt(2);
         arpha *= 2;
     }
+	/*
     nn = 0;
     mm = 0;
     for(i = 0;i < (int)meshmodel->numvertices;i++){
@@ -237,11 +238,11 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
             mm++;
             printf("find2 \n");
         }
-    }
-    printf("nn mm %d %d\n",nn,mm);
+    }*/
+    //printf("nn mm %d %d\n",nn,mm);
 
 
-	recoveryVerticesByVerNormal();
+	//recoveryVerticesByVerNormal();
     printf("finished\n");
 
 
@@ -338,7 +339,7 @@ void L0ByVerNormal::updateInfo()
                 sum += tm;
             }
         }
-        sum = sum > 1e-12 ? sum : 1e-12;
+        sum = sum > 1e-3 ? sum : 1e-3;
 
         k = 0;
         for(j = 0;j < info[i][j].cnt;j++){
@@ -368,7 +369,7 @@ void L0ByVerNormal::delInfo()
 void L0ByVerNormal::recoveryVerticesByVerNormal()
 {
     //printf("vernum = %d\ntrinum = %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
-    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices, guidedmeshVerNormal);
+    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices,verVector);
 
     getEdge();
     initVerNeighborVer();
