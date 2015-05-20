@@ -29,7 +29,7 @@ RecoveryByVerNormalL0::~RecoveryByVerNormalL0()
 
     if(info)
     {
-        for(i = 0;i < edgeCnt;i++)
+        for(i = 0;i < (2 * edgeCnt) + (int)meshmodel->numvertices * 3;i++)
         {
             if(info[i])
                 delete [] info[i];
@@ -52,32 +52,45 @@ RecoveryByVerNormalL0::~RecoveryByVerNormalL0()
 void RecoveryByVerNormalL0::slove()
 {
     int i, j;
-    int maxtimes = 10;
+    int maxtimes = 5;
     double beta = 0.7;
     double arpha = 0;
     double lambda = 0.0003;
-    p = new double[3 * (int)meshmodel->numvertices + 2 * edgeCnt];
-    v = new double[3 * (int)meshmodel->numvertices];
+
 
     initRelation();
     initInfo();
 
+    p = new double[3 * (int)meshmodel->numvertices + 2 * edgeCnt + arinfocnt];
+    v = new double[3 * (int)meshmodel->numvertices];
     for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
     {
         p[i] = meshmodel->vertices[i + 3];
     }
+
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        j = 0;
+        p[i * 3 + j + (int)meshmodel->numvertices * 3] = p[3 * i + 1] * (-1) * vervector[j][2] + p[3 * i + 2] * vervector[j][1];
+
+        j++;
+        p[i * 3 + j + (int)meshmodel->numvertices * 3] = p[3 * i + 0] * vervector[j][2] + p[3 * i + 2] * (-1) * vervector[j][0];
+
+        j++;
+        p[i * 3 + j + (int)meshmodel->numvertices * 3] = p[3 * i + 0] * (-1) * vervector[j][1] + p[3 * i + 1] * vervector[j][0];
+    }
+
     for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
     {
         v[i] = meshmodel->vertices[i + 3];
     }
 
-    SubSolving s_l0(relation, info, 2 *  edgeCnt, 0 ,  3 * (int)meshmodel->numvertices);
+    SubSolving s_l0(relation, info, 2 *  edgeCnt + arinfocnt, arinfocnt ,  3 * (int)meshmodel->numvertices);
     s_l0.init();
 
     int cc = 1;
     while(cc <= maxtimes)
     {
-        for(i = 0;i < 2 * edgeCnt;i++)
+        for(i = arinfocnt;i < 2 * edgeCnt + arinfocnt;i++)
         {
             double sum = 0;
             for(j = 0;j < 6;j++)
@@ -98,7 +111,7 @@ void RecoveryByVerNormalL0::slove()
         s_l0.update();
         s_l0.getParameter(p, v,info, beta, arpha);
         s_l0.slove();
-        printf("\trecoveryByL0\t%d\ttime\tfinished\n",cc);
+        printf("\trecoveryByL0\t%d\ttime\tfinished beta = %lf\n",cc,beta);
         beta = sqrt(2) * beta;
         cc++;
     }
@@ -167,11 +180,40 @@ void RecoveryByVerNormalL0::initRelation()
 void RecoveryByVerNormalL0::initInfo()
 {
     int i, j;
-    info = new Info *[(2 * edgeCnt)];
-
+    info = new Info *[(2 * edgeCnt) + (int)meshmodel->numvertices * 3];
+    arinfocnt = (int)meshmodel->numvertices * 3;
     Edge *tail = edge;
 
-    i = 0;
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        j = 0;
+        info[i * 3 + j] = new Info[2];
+        info[i * 3 + j][0].data = 3 * i + 1;
+        info[i * 3 + j][0].w = -1 * vervector[j][2];
+        info[i * 3 + j][0].cnt = 2;
+        info[3 * i + j][1].data = 3 * i + 2;
+        info[i * 3 + j][1].w = vervector[j][1];
+        info[i * 3 + j][1].cnt = 2;
+
+        j++;
+        info[i * 3 + j] = new Info[2];
+        info[i * 3 + j][0].data = 3 * i + 0;
+        info[i * 3 + j][0].w = vervector[j][2];
+        info[i * 3 + j][0].cnt = 2;
+        info[i * 3 + j][1].data = 3 * i + 2;
+        info[i * 3 + j][1].w = -1 * vervector[j][0];
+        info[i * 3 + j][1].cnt = 2;
+
+        j++;
+        info[i * 3 + j] = new Info[2];
+        info[i * 3 + j][0].data = 3 * i + 0;
+        info[i * 3 + j][0].w = -1 * vervector[j][1];
+        info[i * 3 + j][0].cnt = 2;
+        info[i * 3 + j][1].data = 3 * i + 1;
+        info[i * 3 + j][1].w = vervector[j][0];
+        info[i * 3 + j][1].cnt = 2;
+    }
+
+    i = (int)meshmodel->numvertices * 3;
     while(tail)
     {
         info[i] = new Info[6];

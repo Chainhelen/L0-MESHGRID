@@ -16,6 +16,7 @@ class RecoveryByVerNormalL0{
         List **verRelation;
         List **relation;
         int edgeCnt;
+        int arinfocnt;
 
     public:
         RecoveryByVerNormalL0(GLMmodel *pmeshmodel,IndexList **pverticesvindices,IndexList **pverticestindices,double **pvervector);
