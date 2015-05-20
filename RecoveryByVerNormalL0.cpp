@@ -1,6 +1,7 @@
 #include "SubSolving.h"
 #include "math.h"
 #include "RecoveryByVerNormalL0.h"
+#define pi acos(-1.0)
 
 RecoveryByVerNormalL0::RecoveryByVerNormalL0(GLMmodel *pmeshmodel,IndexList **pverticesvindices,IndexList **pverticestindices,double **pvervector)
 {
@@ -52,9 +53,9 @@ RecoveryByVerNormalL0::~RecoveryByVerNormalL0()
 void RecoveryByVerNormalL0::slove()
 {
     int i, j;
-    int maxtimes = 5;
+    int maxtimes = 10;
     double beta = 0.7;
-    double arpha = 0;
+    double arpha = 1;
     double lambda = 0.0003;
 
 
@@ -116,11 +117,47 @@ void RecoveryByVerNormalL0::slove()
         cc++;
     }
     printf("\n\n");
-    for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
+
+	int yy[3] = {0};
+    double xsum = -1;
+    int idx = -1;
+
+    for(i = 0;i < (int)meshmodel->numvertices;i++)
     {
-        meshmodel->vertices[i + 3] = v[i];
+        double len = 0;
+        for(j = 0;j < 3;j++){
+            len += (meshmodel->vertices[3 * i + j + 3] - v[3 * i + j]) * (meshmodel->vertices[3 * i + j + 3] - v[3 * i + j]);
+        }
+        len = sqrt(len);
+        if(xsum < len){
+            xsum = len;
+            idx = i;
+        }
+    }
+    double ysum  = 1.0;
+    double xy = 0.0;
+    xsum = xsum > 1e-3 ? xsum :1e-3;
+
+    for(i = 0;i < 3;i++){
+        xy += meshmodel->vertices[3 * idx + j + 3] * v[3 * idx + j];
+    }
+    double xxx = xy / ysum / xsum / 2.0;
+    xxx = xxx > 1.0 ? 1.0 : xxx;
+    xxx = xxx < -1.0 ? -1.0 : xxx;
+
+    double angle = acos(xxx);
+
+    if(angle > pi / 2){
+        angle = pi - angle;
     }
 
+    printf("max_diff : xsum = %lf angle = %lf\n",xsum, angle);
+
+    for(i = 0;i < (int)meshmodel->numvertices;i++){
+        for(j = 0;j < 3;j++){
+            meshmodel->vertices[3 * i + j + 3] = v[3 * i + j];
+        }
+    }
 }
 
 void RecoveryByVerNormalL0::getParameter(List **pVerRelation,int pEdgeCnt, Edge *pEdge)

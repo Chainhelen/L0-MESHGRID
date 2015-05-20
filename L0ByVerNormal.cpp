@@ -199,6 +199,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
             }
         }
         for(i = 0; i < (int)meshmodel->numvertices;i++){
+
             sum = 0.0;
             for(j = 0;j < 3;j++){
                 sum += verVector[j][i] * verVector[j][i];
@@ -216,6 +217,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
         beta *= sqrt(2);
         arpha *= 2;
     }
+	recoveryVerticesByVerNormal();
 	/*
     nn = 0;
     mm = 0;
@@ -369,7 +371,7 @@ void L0ByVerNormal::delInfo()
 void L0ByVerNormal::recoveryVerticesByVerNormal()
 {
     //printf("vernum = %d\ntrinum = %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
-    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices,verVector);
+    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices,guidedmeshVerNormal);
 
     getEdge();
     initVerNeighborVer();
