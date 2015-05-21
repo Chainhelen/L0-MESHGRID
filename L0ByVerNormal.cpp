@@ -173,7 +173,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
                 }
             }
             for(j = 0;j < 3;j++){
-                sum += tsum[k] * tsum[k];
+                sum += tsum[j] * tsum[j];
             }
             if(sum <= lambda / beta){
                 nn++;
