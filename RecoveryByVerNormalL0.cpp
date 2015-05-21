@@ -8,6 +8,8 @@ RecoveryByVerNormalL0::RecoveryByVerNormalL0(GLMmodel *pmeshmodel,IndexList **pv
     verticestindices = pverticestindices;
     verticesvindices = pverticesvindices;
     vervector = pvervector;
+    arinfocnt = 0;
+    infocnt = 0;
 }
 
 RecoveryByVerNormalL0::~RecoveryByVerNormalL0()
@@ -56,28 +58,31 @@ void RecoveryByVerNormalL0::slove()
     double beta = 0.7;
     double arpha = 0;
     double lambda = 0.0003;
-    p = new double[3 * (int)meshmodel->numvertices + 2 * edgeCnt];
-    v = new double[3 * (int)meshmodel->numvertices];
 
     initRelation();
     initInfo();
 
+    p = new double[3 * (int)meshmodel->numvertices + arinfocnt];
+    v = new double[3 * (int)meshmodel->numvertices];
     for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
     {
         p[i] = meshmodel->vertices[i + 3];
+    }
+    for(i = 3 * (int)meshmodel->numvertices;i < 3 * (int)meshmodel->numvertices + arinfocnt;i++){
+        p[i] = 0;
     }
     for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
     {
         v[i] = meshmodel->vertices[i + 3];
     }
 
-    SubSolving s_l0(relation, info, 2 *  edgeCnt, 0 ,  3 * (int)meshmodel->numvertices);
+    SubSolving s_l0(relation, info, infocnt, arinfocnt ,  3 * (int)meshmodel->numvertices);
     s_l0.init();
 
     int cc = 1;
     while(cc <= maxtimes)
     {
-        for(i = 0;i < 2 * edgeCnt;i++)
+        for(i = arphacnt;i < infocnt;i++)
         {
             double sum = 0;
             for(j = 0;j < 6;j++)
@@ -107,7 +112,6 @@ void RecoveryByVerNormalL0::slove()
     {
         meshmodel->vertices[i + 3] = v[i];
     }
-
 }
 
 void RecoveryByVerNormalL0::getParameter(List **pVerRelation,int pEdgeCnt, Edge *pEdge)
@@ -166,12 +170,30 @@ void RecoveryByVerNormalL0::initRelation()
 
 void RecoveryByVerNormalL0::initInfo()
 {
-    int i, j;
-    info = new Info *[(2 * edgeCnt)];
-
+    int i, j, k;
+    arinfocnt =  edgeCnt;
+    infocnt = 2 * edgeCnt +arinfocnt;
+    info = new Info *[infocnt];
+//arpha
     Edge *tail = edge;
-
     i = 0;
+    while(tail){
+        info[i] = new Info[12];
+        int flag = -1;
+        for(j = 0;j < 4;j++){
+            for(k = 0;k < 3;k++){
+                info[i][3 * j + k].data = 3 * tail->p[j] + k;
+                info[i][3 * j + k].w = flag;
+                info[i][3 * j + k].cnt = 12;
+            }
+            flag *= -1;
+        }
+        i++;
+        tail = tail->next;
+    }
+
+    tail = edge;
+    i = arinfocnt;
     while(tail)
     {
         info[i] = new Info[6];
