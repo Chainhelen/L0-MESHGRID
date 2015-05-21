@@ -173,16 +173,17 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
                 }
             }
             for(j = 0;j < 3;j++){
-                sum += tsum[k] * tsum[k];
+                sum += tsum[j] * tsum[j];
             }
             if(sum <= lambda / beta){
+//            if(1){
                 nn++;
                 for(k = 0;k < 3;k++)
-                    p[k][i + (int)meshmodel->numvertices] = 0.0;
+                    p[k][i + (int)meshmodel->numvertices + arinfocnt] = 0.0;
             }else{
                 mm++;
                 for(k = 0;k < 3;k++)
-                    p[k][i + (int)meshmodel->numvertices] = beta * tsum[k];
+                    p[k][i + (int)meshmodel->numvertices + arinfocnt] = beta * tsum[k];
             }
         }
 
@@ -214,7 +215,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
 		printf("%d\ttime finished\n",cc);
         cc++;
         beta *= sqrt(2);
-        arpha /= 2;
+        //arpha /= 2;
     }
 	/*
     nn = 0;
@@ -361,10 +362,10 @@ void L0ByVerNormal::updateInfo()
         for(j = 0;j < info[i + arinfocnt][j].cnt;j++){
             if(i != info[i + arinfocnt][j].data){
  //               info[i][j].w = -1 * distv[k] / sum;
-                info[i + arinfocnt][j].w = -1 / (int)distv.size();
+                info[i + arinfocnt][j].w = -1.0 / (int)distv.size();
                 k++;
             }else{
-                info[i + arinfocnt][j].w = 1;
+                info[i + arinfocnt][j].w = 1.0;
             }
         }
     }
