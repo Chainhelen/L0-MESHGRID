@@ -215,7 +215,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
 		printf("%d\ttime finished\n",cc);
         cc++;
         beta *= sqrt(2);
-        //arpha /= 2;
+        arpha /= 2;
     }
 	/*
     nn = 0;
