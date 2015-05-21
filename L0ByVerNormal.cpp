@@ -167,9 +167,9 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
                 tsum[j] = 0.0;
             }
 
-            for(j = 0;j < info[i][j].cnt;j++){
+            for(j = 0;j < info[i + arinfocnt][j].cnt;j++){
                 for(k = 0;k < 3;k++){
-                    tsum[k] += verVector[k][info[i][j].data] * info[i][j].w;
+                    tsum[k] += verVector[k][info[i + arinfocnt][j].data] * info[i + arinfocnt][j].w;
                 }
             }
             for(j = 0;j < 3;j++){
@@ -214,7 +214,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
 		printf("%d\ttime finished\n",cc);
         cc++;
         beta *= sqrt(2);
-        arpha *= 2;
+        arpha /= 2;
     }
 	/*
     nn = 0;
@@ -259,7 +259,7 @@ void L0ByVerNormal::getPV()
         return ;
     }
     for(i = 0;i < 3;i++){
-        p[i] = new double[(int)meshmodel->numvertices + (int)meshmodel->numvertices];
+        p[i] = new double[(int)meshmodel->numvertices + infocnt];
         v[i] = new double[(int)meshmodel->numvertices];
 
         if(NULL == p[i] || NULL == v[i]){
@@ -285,9 +285,9 @@ void L0ByVerNormal::initInfo()
     List *verneighborvertail = NULL;
     int i, j;
     vector<int>v;
-
-    infocnt = (int)meshmodel->numvertices;
-    arinfocnt = 0;
+    getEdge();
+    arinfocnt = edgeNum;
+    infocnt = (int)meshmodel->numvertices + arinfocnt;
 
     info = new Info*[infocnt];
     if(NULL == info){
@@ -298,6 +298,21 @@ void L0ByVerNormal::initInfo()
         printf("error in L0ByVerNormal::initInfo  verNeighborVer\n");
         return ;
     }
+    //arpha
+    Edge *tail = edge;
+    i = 0;
+    while(tail){
+        int flag = -1;
+        info[i] = new Info[4];
+        for(int j = 0;j < 4;j++){
+            info[i][j].w = flag;
+            info[i][j].data = tail->p[j];
+            info[i][j].cnt = 4;
+            flag *= -1;
+        }
+        tail = tail->next;
+        i++;
+    }
 
     for(i = 0;i < (int)meshmodel->numvertices;i++){
         v.clear();
@@ -306,17 +321,18 @@ void L0ByVerNormal::initInfo()
             v.push_back(verneighborvertail->data);
             verneighborvertail = verneighborvertail->next;
         }
-        info[i] = new Info[(int)v.size()];
-        if(NULL == info[i]){
+        info[i + arinfocnt] = new Info[(int)v.size()];
+        if(NULL == info[i + arinfocnt]){
             printf("error in L0ByVerNormal::info[%d\n]",i);
             return ;
         }
         for(j = 0;j < (int)v.size();j++){
-            info[i][j].w = 0.0;
-            info[i][j].data = v[j];
-            info[i][j].cnt = (int)v.size();
+            info[i + arinfocnt][j].w = 0.0;
+            info[i + arinfocnt][j].data = v[j];
+            info[i + arinfocnt][j].cnt = (int)v.size();
         }
     }
+    delEdge();
     verneighborvertail = NULL;
 }
 
@@ -332,9 +348,9 @@ void L0ByVerNormal::updateInfo()
         anglev.clear();
         sum = 0.0;
 
-        for(j = 0;j < info[i][j].cnt;j++){
-            if(i != info[i][j].data){
-                tm = getPointDistance(i, info[i][j].data);
+        for(j = 0;j < info[i + arinfocnt][j].cnt;j++){
+            if(i != info[i + arinfocnt][j].data){
+                tm = getPointDistance(i, info[i + arinfocnt][j].data);
                 distv.push_back(tm);
                 sum += tm;
             }
@@ -342,13 +358,13 @@ void L0ByVerNormal::updateInfo()
         sum = sum > 1e-3 ? sum : 1e-3;
 
         k = 0;
-        for(j = 0;j < info[i][j].cnt;j++){
-            if(i != info[i][j].data){
+        for(j = 0;j < info[i + arinfocnt][j].cnt;j++){
+            if(i != info[i + arinfocnt][j].data){
  //               info[i][j].w = -1 * distv[k] / sum;
-                info[i][j].w = -1 / (int)distv.size();
+                info[i + arinfocnt][j].w = -1 / (int)distv.size();
                 k++;
             }else{
-                info[i][j].w = 1;
+                info[i + arinfocnt][j].w = 1;
             }
         }
     }
@@ -357,7 +373,7 @@ void L0ByVerNormal::updateInfo()
 void L0ByVerNormal::delInfo()
 {
     if(NULL != info){
-        for(int i = 0; i < (int)meshmodel->numvertices;i++){
+        for(int i = 0; i < arinfocnt;i++){
             delete []info[i];
             info[i] = NULL;
         }
