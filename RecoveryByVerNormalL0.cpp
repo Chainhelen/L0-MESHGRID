@@ -82,7 +82,7 @@ void RecoveryByVerNormalL0::slove()
     int cc = 1;
     while(cc <= maxtimes)
     {
-        for(i = arphacnt;i < infocnt;i++)
+        for(i = arinfocnt;i < infocnt;i++)
         {
             double sum = 0;
             for(j = 0;j < 6;j++)
