@@ -55,7 +55,7 @@ void RecoveryByVerNormalL0::slove()
     int maxtimes = 10;
     double beta = 0.07;
     double arpha = 0;
-    double lambda = 0.0003;
+    double lambda = 0.0008;
     p = new double[3 * (int)meshmodel->numvertices + 2 * edgeCnt];
     v = new double[3 * (int)meshmodel->numvertices];
 

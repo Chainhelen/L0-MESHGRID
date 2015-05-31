@@ -175,8 +175,8 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
             for(j = 0;j < 3;j++){
                 sum += tsum[j] * tsum[j];
             }
-            if(sum <= lambda / beta){
-//            if(1){
+//            if(sum <= lambda / beta){
+            if(1){
                 nn++;
                 for(k = 0;k < 3;k++)
                     p[k][i + (int)meshmodel->numvertices + arinfocnt] = 0.0;
@@ -215,7 +215,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
 		printf("%d\ttime finished\n",cc);
         cc++;
         beta *= sqrt(2);
-        arpha /= 2;
+        arpha /= sqrt(1.3);
     }
 	/*
     nn = 0;
