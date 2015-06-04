@@ -214,7 +214,7 @@ GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int p
 		printf("%d\ttime finished\n",cc);
         cc++;
         beta *= sqrt(2);
-        arpha *= 2;
+        arpha = 1;
     }
 	/*
     nn = 0;
@@ -369,14 +369,16 @@ void L0ByVerNormal::delInfo()
 void L0ByVerNormal::recoveryVerticesByVerNormal()
 {
     //printf("vernum = %d\ntrinum = %d\n",(int)meshmodel->numvertices,(int)meshmodel->numtriangles);
-    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verticesvindices, verticestindices,verVector);
+    initVerNeighborVer();
+    RecoveryByVerNormalL0 myrecoverybyl0(meshmodel, verNeighborVer,verVector);
+    delVerNeighborVer();
 
     getEdge();
-    initVerNeighborVer();
+    initVerSpreadNeighborVer();
 
-    myrecoverybyl0.getParameter(verNeighborVer, edgeNum, edge);
+    myrecoverybyl0.getParameter(verSpreadNeighborVer, edgeNum, edge);
     myrecoverybyl0.slove();
 
-    delVerNeighborVer();
+    delVerSpreadNeighborVer();
     delEdge();
 }

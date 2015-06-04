@@ -5,20 +5,22 @@
 class RecoveryByVerNormalL0{
     public:
         GLMmodel *meshmodel;
-        IndexList **verticesvindices,**verticestindices;
+        List **verticesortvindices;
         double **vervector;
 
         Info **info;
         Edge *edge;
         double *p;
         double *v;
+        int infocnt;
+        int arinfocnt;
 
         List **verRelation;
         List **relation;
         int edgeCnt;
 
     public:
-        RecoveryByVerNormalL0(GLMmodel *pmeshmodel,IndexList **pverticesvindices,IndexList **pverticestindices,double **pvervector);
+        RecoveryByVerNormalL0(GLMmodel *pmeshmodel,List **verticesortvindices,double **pvervector);
 		~RecoveryByVerNormalL0();
 
         void getParameter(List **pVerRelation,int pEdgeCnt, Edge *pEdge);

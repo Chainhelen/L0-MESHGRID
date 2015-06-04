@@ -2,12 +2,16 @@
 #include "math.h"
 #include "RecoveryByVerNormalL0.h"
 
-RecoveryByVerNormalL0::RecoveryByVerNormalL0(GLMmodel *pmeshmodel,IndexList **pverticesvindices,IndexList **pverticestindices,double **pvervector)
+#define ADD_ARPHA_FIRST
+//#define ADD_ARPHA_SECOND
+
+RecoveryByVerNormalL0::RecoveryByVerNormalL0(GLMmodel *pmeshmodel,List **pverticesortvindices,double **pvervector)
 {
     meshmodel = pmeshmodel;
-    verticestindices = pverticestindices;
-    verticesvindices = pverticesvindices;
+    verticesortvindices = pverticesortvindices;
     vervector = pvervector;
+    infocnt = 0;
+    arinfocnt = 0;
 }
 
 RecoveryByVerNormalL0::~RecoveryByVerNormalL0()
@@ -53,31 +57,34 @@ void RecoveryByVerNormalL0::slove()
 {
     int i, j;
     int maxtimes = 10;
-    double beta = 0.7;
-    double arpha = 0;
-    double lambda = 0.0003;
-    p = new double[3 * (int)meshmodel->numvertices + 2 * edgeCnt];
-    v = new double[3 * (int)meshmodel->numvertices];
+    double beta = 0.07;
+    double arpha = 2;
+    double lambda = 0.003;
 
     initRelation();
     initInfo();
 
+    p = new double[3 * (int)meshmodel->numvertices + infocnt];
+    v = new double[3 * (int)meshmodel->numvertices];
     for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
     {
         p[i] = meshmodel->vertices[i + 3];
+    }
+    for(i = 0; i < arinfocnt;i++){
+        p[i + 3 * (int)meshmodel->numvertices] = 0.0;
     }
     for(i = 0;i < 3 * (int)meshmodel->numvertices;i++)
     {
         v[i] = meshmodel->vertices[i + 3];
     }
 
-    SubSolving s_l0(relation, info, 2 *  edgeCnt, 0 ,  3 * (int)meshmodel->numvertices);
+    SubSolving s_l0(relation, info, infocnt, arinfocnt ,  3 * (int)meshmodel->numvertices);
     s_l0.init();
 
     int cc = 1;
     while(cc <= maxtimes)
     {
-        for(i = 0;i < 2 * edgeCnt;i++)
+        for(i = arinfocnt;i < infocnt;i++)
         {
             double sum = 0;
             for(j = 0;j < 6;j++)
@@ -99,6 +106,7 @@ void RecoveryByVerNormalL0::slove()
         s_l0.getParameter(p, v,info, beta, arpha);
         s_l0.slove();
         printf("\trecoveryByL0\t%d\ttime\tfinished\n",cc);
+//		arpha /= 2;
         beta = sqrt(2) * beta;
         cc++;
     }
@@ -167,11 +175,76 @@ void RecoveryByVerNormalL0::initRelation()
 void RecoveryByVerNormalL0::initInfo()
 {
     int i, j;
-    info = new Info *[(2 * edgeCnt)];
+    arinfocnt = 0;
+    Edge *tail = NULL;
 
-    Edge *tail = edge;
+#ifdef ADD_ARPHA_FIRST
+    arinfocnt = edgeCnt;
+#endif
 
+#ifdef ADD_ARPHA_SECOND
+    arinfocnt = 3 * meshmodel->numvertices;
+#endif
+
+    infocnt = 2 * edgeCnt + arinfocnt;
+    info = new Info *[infocnt];
+
+
+#ifdef ADD_ARPHA_FIRST
+    tail = edge;
     i = 0;
+    while(tail){
+        info[i] = new Info[12];
+        for(j = 0;j < 4;j++){
+            for(int k = 0;k < 3;k++){
+                info[i][3 * j + k].cnt = 12;
+                info[i][3 * j + k].w = (j % 2 == 0 ? -1 : 1);
+                info[i][3 * j + k].data = 3 * tail->p[j] + k;
+            }
+        }
+        i++;
+        tail = tail->next;
+    }
+#endif
+
+#ifdef ADD_ARPHA_SECOND
+    for(i = 0;i < meshmodel->numvertices;i++){
+        List *vertail = verticesortvindices[i];
+        int num = 0;
+
+        while(vertail){
+            num++;
+            vertail = vertail->next;
+        }
+
+        for(j = 0;j < 3;j++){
+            info[3 * i + j] = new Info[num];
+        }
+        vertail = verticesortvindices[i];
+
+        int k = 0;
+        while(vertail){
+            if(vertail->data == i){
+                for(j = 0;j < 3;j++){
+                    info[3 * i + j][k].data = 3 *vertail->data + j;
+                    info[3 * i + j][k].w = -1.0;
+                    info[3 * i + j][k].cnt = num;
+                }
+            }else{
+                for(j = 0;j < 3;j++){
+                    info[3 * i + j][k].data = 3 * vertail->data + j;
+                    info[3 * i + j][k].w = 1.0 / (num - 1);
+                    info[3 * i + j][k].cnt = num;
+                }
+            }
+            k++;
+            vertail = vertail->next;
+        }
+    }
+#endif
+
+    tail = edge;
+    i = arinfocnt;
     while(tail)
     {
         info[i] = new Info[6];
