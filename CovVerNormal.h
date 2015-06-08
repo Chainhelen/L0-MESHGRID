@@ -8,5 +8,8 @@ class CovVerNormal : public L0{
     public:
         CovVerNormal(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **originverticestindices);
         ~CovVerNormal();
+        void initVerWeight();
+        void delVerWeight();
+        void recoveryVerticesByVerNormal();
 };
 #endif

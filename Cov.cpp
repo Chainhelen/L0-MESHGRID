@@ -495,15 +495,17 @@ void Cov::ComputeNrneighbor(GLMmodel *meshmodel, IndexList **H, int r)
     tail = NULL;
 }
 
-void Cov::insertIndexList(IndexList **H,int place,std::map<int,char> mp, int num)
+void Cov::insertIndexList(IndexList **H,int place,std::map<int,char> &mp, int num)
 {
     IndexList *tail = H[place];
     IndexList *s = NULL;
 
     H[place]->index = num - 1;
+    H[place]->next = NULL;
+
     std::map<int, char>::iterator it;
 
-    for(it = mp.begin();it != mp.begin();it++){
+    for(it = mp.begin();it != mp.end();it++){
         if(1 == it->second){
             s = new IndexList();
             s->index = it->first;
@@ -739,7 +741,7 @@ void Cov::GetVectorOfCoV(GLMmodel *meshmodel,int r)
 	finish = clock();
 
 	totaltime=(double)(finish-start)/CLOCKS_PER_SEC;
-	cout<<totaltime<<endl;
+//	cout<<totaltime<<endl;
 
 	for (i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
@@ -887,7 +889,7 @@ void Cov::ComputeVerOfNeighborVern(GLMmodel *meshmodel,int r)
 	ComputeNrneighbor(meshmodel, verOfNeighborVern, r);
 	finish = clock();
 	totaltime=(double)(finish-start)/CLOCKS_PER_SEC;
-	cout<<totaltime<<endl;
+//	cout<<totaltime<<endl;
 }
 
 void Cov::ComputeWeightCov(GLMmodel *meshmodel)
@@ -927,15 +929,26 @@ void Cov::ComputeWeightCov(GLMmodel *meshmodel)
 	}
 }
 
-void Cov::Denoising(GLMmodel *meshmodel)
+void Cov::getWeightCov(GLMmodel *meshmodel)
 {
 	GetFeatureVector(meshmodel);
-	ComputeVerOfNeighborVern(meshmodel, 3);
-	GetVectorOfCoV(meshmodel, 3);
+	ComputeVerOfNeighborVern(meshmodel, 1);
+	GetVectorOfCoV(meshmodel, 1);
 	Computedelta(meshmodel);
 	ComputeWeightCov(meshmodel);
+}
 
-	for (int i = 1; i <= (int)meshmodel->numvertices; i++)
+void Cov::Denoising(GLMmodel *meshmodel,double **verNormal)
+{
+    getWeightCov(meshmodel);
+
+    int i, j;
+    double **verNormalTemp = new double *[3];
+    for(i = 0;i < 3;i++){
+        verNormalTemp[i] = new double[(int)meshmodel->numvertices];
+    }
+
+	for (i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
 		double sum = 0;
 		for (int j = 0; j < verOfNeighborVer[i]->index; j++)
@@ -953,18 +966,30 @@ void Cov::Denoising(GLMmodel *meshmodel)
 		j = 0;
 		while (p)
 		{
-			sumx += weightCov[i][j]*meshmodel->vertices[3*p->index+0]/sum;
-			sumy += weightCov[i][j]*meshmodel->vertices[3*p->index+1]/sum;
-			sumz += weightCov[i][j]*meshmodel->vertices[3*p->index+2]/sum;
+			sumx += weightCov[i][j] * verNormal[0][(p->index - 1)] / sum;
+			sumy += weightCov[i][j] * verNormal[1][(p->index - 1)] / sum;
+			sumz += weightCov[i][j] * verNormal[2][(p->index - 1)] / sum;
 
 			j++;
 			p = p->next;
 		}
-
-		meshmodel->vertices[3*i+0] = sumx;
-		meshmodel->vertices[3*i+1] = sumy;
-		meshmodel->vertices[3*i+2] = sumz;
+        verNormalTemp[0][(i - 1)] = sumx;
+        verNormalTemp[1][(i - 1)] = sumy;
+        verNormalTemp[2][(i - 1)] = sumz;
 	}
+    for(i = 0;i < 3;i++){
+        for(j = 0;j < (int)meshmodel->numvertices;j++){
+            verNormal[i][j] = verNormalTemp[i][j];
+        }
+    }
+    if(NULL != verNormalTemp){
+        for(i = 0;i < 3;i++){
+            delete []verNormalTemp[i];
+            verNormalTemp[i] = NULL;
+        }
+        delete []verNormalTemp;
+        verNormalTemp = NULL;
+    }
 }
 
 

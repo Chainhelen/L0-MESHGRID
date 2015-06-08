@@ -7,6 +7,7 @@ class L0ByVerNormal : public L0{
         Info **info;
         double **p;
         double **v;
+        double **weightCov;
         GLMmodel *guidedmesh;
         double **guidedmeshVerNormal;
         double **guidedmeshFaceNormal;
@@ -19,6 +20,7 @@ class L0ByVerNormal : public L0{
         void initGuidedmeshFaceNormal();
         void initGuidedmeshVerNormal();
 
+        void useWeightCov(double **pWeightCov);
         GLMmodel* doL0(double parpha, double pbeta, double plambda, int pmaxtimes);
 
         void getPV();
