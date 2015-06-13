@@ -4,6 +4,9 @@
 #include "MathFunctions.h"
 #include <math.h>
 #include <time.h>
+#include <vector>
+#include <map>
+#include <iterator>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 
@@ -22,6 +25,7 @@ Cov::Cov()
 	weightl = 1.0;
 
 	verOfNeighborVer = NULL;
+	verOfNeighborVern = NULL;
 	trianglesOfNeighborVer = NULL;
 
 	facetnorm = NULL;
@@ -75,7 +79,11 @@ Cov::~Cov()
 		delta = NULL;
 	}
 
-	Deletes(verOfNeighborVer, trianglesOfNeighborVer, weightCov, n);
+	Deletes(verOfNeighborVer, verOfNeighborVern, trianglesOfNeighborVer, weightCov, n);
+	verOfNeighborVer = NULL;
+	verOfNeighborVern = NULL;
+	trianglesOfNeighborVer = NULL;
+	weightCov = NULL;
 }
 
 void Cov::ReturnNumofVerofMeshodel(GLMmodel *meshmodel)
@@ -223,7 +231,7 @@ void Cov::ComputeVertexNormal(GLMmodel *meshmodel)
 }
 
 
-bool Cov::IsInTriangle(GLMmodel *pmesh, int indexv1, int indexv2, 
+bool Cov::IsInTriangle(GLMmodel *pmesh, int indexv1, int indexv2,
 	                       int *indexv3, int indext)
 {
 	bool flag = true;
@@ -251,7 +259,7 @@ bool Cov::IsInTriangle(GLMmodel *pmesh, int indexv1, int indexv2,
 	return flag;
 }
 
-void Cov::ComputeCotangentWeight(double *pcotangentweight, int indexv, 
+void Cov::ComputeCotangentWeight(double *pcotangentweight, int indexv,
 	int *indexcw, GLMmodel *pmesh, IndexList **pverOfNeighborVer, IndexList **ptrianglesOfNeighborVer)
 {
 	int indexlr, k;
@@ -298,7 +306,7 @@ void Cov::ComputeCotangentWeight(double *pcotangentweight, int indexv,
 }
 
 
-void Cov::ConstructLaplacianCoordinatesCotangentWeight(double *plc, double *pcw, 
+void Cov::ConstructLaplacianCoordinatesCotangentWeight(double *plc, double *pcw,
 	int *indexcw, int indexv, IndexList **pverOfNeighborVer, float *vertices)
 {
 	for (int i = 0; i < 3; i++)
@@ -343,7 +351,7 @@ void Cov::ComputeLaplaciancoordinates(GLMmodel *pmesh, IndexList **pverOfNeighbo
 	{
 		laplaciancoordinates = new double [3*(pmesh->numvertices+1)];
 	}
-	
+
 	indexcw = 0;
 	for (i = 1; i <= (int)pmesh->numvertices; i++)
 	{
@@ -388,9 +396,9 @@ void Cov::GetFeatureVector(GLMmodel *meshmodel)
 				sum1 = 10e-10;
 			}
 			featureVector[length*i+l] = weightd*meshmodel->vertices[3*i+l]/sqrt(sum1);
-			
+
 			featureVector[length*i+l+3] = weightn*vernormal[3*i+l];
-			
+
 			if (sum2 < 10e-10)
 			{
 				sum2 = 10e-10;
@@ -434,19 +442,79 @@ void Cov::AddVertex(GLMmodel *meshmodel, IndexList **L)
 			p = p->next;
 		}
 	}
-	
+
 }
 
 void Cov::ComputeNrneighbor(GLMmodel *meshmodel, IndexList **H, int r)
 {
-	
-	if (r > 1)
+	/*if (r > 1)
 	{
 		for (int i = 1; i < r; i++)
 		{
 			AddVertex(meshmodel, H);
 		}
-	}
+	}*/
+
+	int i, t, num;
+    std::map<int, char> mp;
+    std::map<int, char> mptemp1;
+    std::map<int, char> mptemp2;
+    std::map<int, char>::iterator it;
+
+	IndexList *tail = NULL;
+
+    for(i = 1;i <= meshmodel->numvertices;i++){
+        t = r;
+        map<int, char>().swap(mp);
+        map<int, char>().swap(mptemp1);
+        map<int, char>().swap(mptemp2);
+
+        mp[i] = 1;
+        mptemp2[i] = 1;
+
+        while(t--){
+            mptemp1 = mptemp2;
+            map<int, char>().swap(mptemp2);
+
+            for(it = mptemp1.begin();it != mptemp1.end();it++){
+                tail = verOfNeighborVer[it->first]->next;
+                while(tail){
+                    if(!mp[tail->index]){
+                        mptemp2[tail->index] = 1;
+                    }
+                    tail = tail->next;
+                }
+            }
+            for(it = mptemp2.begin();it != mptemp2.end();it++){
+                mp[it->first] = 1;
+            }
+        }
+        mp[i] = 0;
+        insertIndexList(H, i, mp, (int)mp.size());
+    }
+    tail = NULL;
+}
+
+void Cov::insertIndexList(IndexList **H,int place,std::map<int,char> &mp, int num)
+{
+    IndexList *tail = H[place];
+    IndexList *s = NULL;
+
+    H[place]->index = num - 1;
+    H[place]->next = NULL;
+
+    std::map<int, char>::iterator it;
+
+    for(it = mp.begin();it != mp.end();it++){
+        if(1 == it->second){
+            s = new IndexList();
+            s->index = it->first;
+            s->next = NULL;
+            tail->next = s;
+            tail = tail->next;
+        }
+    }
+    tail = NULL;
 }
 
 
@@ -508,30 +576,30 @@ void Cov::Cholesky(gsl_matrix * A)
       int status = 0;
 
       /* Do the first 2 rows explicitly.  It is simple, and faster.  And
-       * one can return if the matrix has only 1 or 2 rows.  
+       * one can return if the matrix has only 1 or 2 rows.
        */
 
       double A_00 = gsl_matrix_get (A, 0, 0);
-      
+
 	  if (A_00 < 10e-10)
       {
 		  A_00 = 10e-10;
       }
-     
+
       double L_00 = sqrt(A_00);
-      
+
       if (A_00 < 0)
         {
           status = GSL_EDOM ;
         }
 
       gsl_matrix_set (A, 0, 0, L_00);
-  
+
       if (M > 1)
         {
           double A_10 = gsl_matrix_get (A, 1, 0);
           double A_11 = gsl_matrix_get (A, 1, 1);
-          
+
           double L_10 = A_10 / L_00;
           double diag = A_11 - L_10 * L_10;
 
@@ -539,22 +607,22 @@ void Cov::Cholesky(gsl_matrix * A)
 		  {
 			  diag = 10e-10;
 		  }
-		  
+
           double L_11 = sqrt(diag);
-          
+
           if (diag < 0)
             {
               status = GSL_EDOM;
             }
 
-          gsl_matrix_set (A, 1, 0, L_10);        
+          gsl_matrix_set (A, 1, 0, L_10);
           gsl_matrix_set (A, 1, 1, L_11);
         }
-      
+
       for (k = 2; k < M; k++)
         {
           double A_kk = gsl_matrix_get (A, k, k);
-          
+
           for (i = 0; i < k; i++)
             {
               double sum = 0;
@@ -568,18 +636,18 @@ void Cov::Cholesky(gsl_matrix * A)
               if (i > 0) {
                 gsl_vector_view di = gsl_vector_subvector(&ci.vector, 0, i);
                 gsl_vector_view dk = gsl_vector_subvector(&ck.vector, 0, i);
-                
+
                 gsl_blas_ddot(&di.vector, &dk.vector, &sum);
               }
 
               A_ki = (A_ki - sum) / A_ii;
               gsl_matrix_set (A, k, i, A_ki);
-            } 
+            }
 
           {
             gsl_vector_view ck = gsl_matrix_row (A, k);
             gsl_vector_view dk = gsl_vector_subvector (&ck.vector, 0, k);
-            
+
             double sum = gsl_blas_dnrm2(&dk.vector);
             double diag = A_kk - sum * sum;
 
@@ -589,20 +657,20 @@ void Cov::Cholesky(gsl_matrix * A)
 			}
 
             double L_kk = sqrt(diag);
-            
+
             if (diag < 0)
               {
                 status = GSL_EDOM;
               }
-            
+
             gsl_matrix_set (A, k, k, L_kk);
           }
         }
 
       /* Now copy the transposed lower triangle to the upper triangle,
-       * the diagonal is common.  
+       * the diagonal is common.
        */
-      
+
       for (i = 1; i < M; i++)
         {
           for (j = 0; j < i; j++)
@@ -610,17 +678,17 @@ void Cov::Cholesky(gsl_matrix * A)
               double A_ij = gsl_matrix_get (A, i, j);
               gsl_matrix_set (A, j, i, A_ij);
             }
-        } 
-      
+        }
+
       if (status == GSL_EDOM)
         {
          cout<<"matrix must be positive definite"<<endl;
         }
-      
+
     }
 }
 
-void Cov::GetVectorOfCoV(GLMmodel *meshmodel)
+void Cov::GetVectorOfCoV(GLMmodel *meshmodel,int r)
 {
 	if (!vectorOfCoV)
 	{
@@ -636,7 +704,7 @@ void Cov::GetVectorOfCoV(GLMmodel *meshmodel)
 	IndexList ** verOfNeighborVer2;
 	verOfNeighborVer2 = new IndexList * [meshmodel->numvertices+1];
 	verOfNeighborVer2[0] = NULL;
-	
+
 	for (i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
 		verOfNeighborVer2[i] = new IndexList;
@@ -645,7 +713,7 @@ void Cov::GetVectorOfCoV(GLMmodel *meshmodel)
 	}
 
 	IndexList *p, *p1, *p2;
-	for (i = 1; i <= (int)meshmodel->numvertices; i++)
+/*	for (i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
 		p = verOfNeighborVer[i]->next;
 		p2 = verOfNeighborVer2[i];
@@ -657,22 +725,23 @@ void Cov::GetVectorOfCoV(GLMmodel *meshmodel)
 			p1->next = NULL;
 			p2->next = p1;
 			p2 = p2->next;
-			
+
 			verOfNeighborVer2[i]->index++;
 
 			p = p->next;
 		}
-	}
+	}*/
 
 	clock_t start,finish;
 	double totaltime;
-	
+
+
 	start = clock();
-	ComputeNrneighbor(meshmodel, verOfNeighborVer2, 2);
+	ComputeNrneighbor(meshmodel, verOfNeighborVer2, r);
 	finish = clock();
-	
+
 	totaltime=(double)(finish-start)/CLOCKS_PER_SEC;
-	cout<<totaltime<<endl;
+//	cout<<totaltime<<endl;
 
 	for (i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
@@ -699,10 +768,10 @@ void Cov::GetVectorOfCoV(GLMmodel *meshmodel)
 			vectorOfCoV[(i-1)*(2*length+1)*length+k] = mean[k];
 			for (int l = 0; l < length; l++)
 			{
-				vectorOfCoV[(i-1)*(2*length+1)*length+length*(l+1)+k] = 
+				vectorOfCoV[(i-1)*(2*length+1)*length+length*(l+1)+k] =
 					sqrt(2.0)*sqrt(length+0.0)*gsl_matrix_get(Cov,k,l);
 
-				vectorOfCoV[(i-1)*(2*length+1)*length+length*(length+l+1)+k] = 
+				vectorOfCoV[(i-1)*(2*length+1)*length+length*(length+l+1)+k] =
 					-sqrt(2.0)*sqrt(length+0.0)*gsl_matrix_get(Cov,k,l);
 			}
 
@@ -744,10 +813,11 @@ void Cov::Computedelta(GLMmodel *meshmodel)
 	}
 	double maxd, diff;
 
+
 	for (int i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
 		IndexList *p;
-		p = verOfNeighborVer[i]->next;
+		p = verOfNeighborVern[i]->next;
 
 		maxd = 0;
 		while (p)
@@ -776,6 +846,52 @@ void Cov::Computedelta(GLMmodel *meshmodel)
 
 }
 
+void Cov::ComputeVerOfNeighborVern(GLMmodel *meshmodel,int r)
+{
+	int i;
+	if (!verOfNeighborVern)
+	{
+		verOfNeighborVern = new IndexList * [meshmodel->numvertices+1];
+		verOfNeighborVern[0] = NULL;
+	}
+
+	for (i = 1; i <= (int)meshmodel->numvertices; i++)
+	{
+		verOfNeighborVern[i] = new IndexList;
+		verOfNeighborVern[i]->index = 0;
+		verOfNeighborVern[i]->next = NULL;
+	}
+
+	IndexList *p, *p1, *p2;
+	for (i = 1; i <= (int)meshmodel->numvertices; i++)
+	{
+		p = verOfNeighborVer[i]->next;
+		p2 = verOfNeighborVern[i];
+
+		while (p)
+		{
+			p1 = new IndexList;
+			p1->index = p->index;
+			p1->next = NULL;
+			p2->next = p1;
+			p2 = p2->next;
+
+			verOfNeighborVern[i]->index++;
+
+			p = p->next;
+		}
+	}
+
+	clock_t start,finish;
+	double totaltime;
+
+	start = clock();
+	ComputeNrneighbor(meshmodel, verOfNeighborVern, r);
+	finish = clock();
+	totaltime=(double)(finish-start)/CLOCKS_PER_SEC;
+//	cout<<totaltime<<endl;
+}
+
 void Cov::ComputeWeightCov(GLMmodel *meshmodel)
 {
 	if (!weightCov)
@@ -785,7 +901,7 @@ void Cov::ComputeWeightCov(GLMmodel *meshmodel)
 
 		for (int i = 1; i <= (int)meshmodel->numvertices; i++)
 		{
-			weightCov[i] = new double[verOfNeighborVer[i]->index];
+			weightCov[i] = new double[verOfNeighborVern[i]->index];
 		}
 	}
 
@@ -793,7 +909,7 @@ void Cov::ComputeWeightCov(GLMmodel *meshmodel)
 	for (int i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
 		IndexList *p;
-		p = verOfNeighborVer[i]->next;
+		p = verOfNeighborVern[i]->next;
 
 		int j = 0;
 
@@ -813,21 +929,26 @@ void Cov::ComputeWeightCov(GLMmodel *meshmodel)
 	}
 }
 
-void Cov::Denoising(GLMmodel *meshmodel)
+void Cov::getWeightCov(GLMmodel *meshmodel)
 {
 	GetFeatureVector(meshmodel);
-		cout << "yes" << endl;
-
-	GetVectorOfCoV(meshmodel);
-		cout << "yes" << endl;
-
+	ComputeVerOfNeighborVern(meshmodel, 1);
+	GetVectorOfCoV(meshmodel, 1);
 	Computedelta(meshmodel);
-		cout << "yes" << endl;
-
 	ComputeWeightCov(meshmodel);
-		cout << "yes" << endl;
+}
 
-	for (int i = 1; i <= (int)meshmodel->numvertices; i++)
+void Cov::Denoising(GLMmodel *meshmodel,double **verNormal)
+{
+    getWeightCov(meshmodel);
+
+    int i, j;
+    double **verNormalTemp = new double *[3];
+    for(i = 0;i < 3;i++){
+        verNormalTemp[i] = new double[(int)meshmodel->numvertices];
+    }
+
+	for (i = 1; i <= (int)meshmodel->numvertices; i++)
 	{
 		double sum = 0;
 		for (int j = 0; j < verOfNeighborVer[i]->index; j++)
@@ -845,22 +966,34 @@ void Cov::Denoising(GLMmodel *meshmodel)
 		j = 0;
 		while (p)
 		{
-			sumx += weightCov[i][j]*meshmodel->vertices[3*p->index+0]/sum;
-			sumy += weightCov[i][j]*meshmodel->vertices[3*p->index+1]/sum;
-			sumz += weightCov[i][j]*meshmodel->vertices[3*p->index+2]/sum;
+			sumx += weightCov[i][j] * verNormal[0][(p->index - 1)] / sum;
+			sumy += weightCov[i][j] * verNormal[1][(p->index - 1)] / sum;
+			sumz += weightCov[i][j] * verNormal[2][(p->index - 1)] / sum;
 
 			j++;
 			p = p->next;
 		}
-
-		meshmodel->vertices[3*i+0] = sumx;
-		meshmodel->vertices[3*i+1] = sumy;
-		meshmodel->vertices[3*i+2] = sumz;
-
+        verNormalTemp[0][(i - 1)] = sumx;
+        verNormalTemp[1][(i - 1)] = sumy;
+        verNormalTemp[2][(i - 1)] = sumz;
 	}
+    for(i = 0;i < 3;i++){
+        for(j = 0;j < (int)meshmodel->numvertices;j++){
+            verNormal[i][j] = verNormalTemp[i][j];
+        }
+    }
+    if(NULL != verNormalTemp){
+        for(i = 0;i < 3;i++){
+            delete []verNormalTemp[i];
+            verNormalTemp[i] = NULL;
+        }
+        delete []verNormalTemp;
+        verNormalTemp = NULL;
+    }
 }
 
-void Cov::Deletes(IndexList **pverOfNeighborVer, IndexList **ptrianglesOfNeighborVer, double **pweightCov, int pn)
+
+void Cov::Deletes(IndexList **pverOfNeighborVer, IndexList **pverOfNeighborVern, IndexList **ptrianglesOfNeighborVer, double **pweightCov, int pn)
 {
 	IndexList *p1, *p2;
 
@@ -883,6 +1016,28 @@ void Cov::Deletes(IndexList **pverOfNeighborVer, IndexList **ptrianglesOfNeighbo
 		delete []pverOfNeighborVer;
 		pverOfNeighborVer = NULL;
 	}
+
+
+	if (pverOfNeighborVern)
+	{
+		for (int i = 1; i <= (int)pn; i++)
+		{
+			p1 = pverOfNeighborVern[i];
+
+			while (p1)
+			{
+				p2 = p1->next;
+				delete p1;
+				p1 = p2;
+			}
+
+			pverOfNeighborVern[i] = NULL;
+		}
+
+		delete []pverOfNeighborVern;
+		pverOfNeighborVern = NULL;
+	}
+
 
 	if (ptrianglesOfNeighborVer)
 	{

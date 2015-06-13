@@ -1,10 +1,10 @@
 #include "L0BYFACEVECTOR.H"
 
-//#define FIRSTFACENEIGHBORFACE
+#define FIRSTFACENEIGHBORFACE
 //#define SECONDFACENEIGHBORFACE
 //#define ALLFACENEIGHBORFACE
 
-//#define TESTZHENG_LOCAL
+#define TESTZHENG_LOCAL
 //#define TEST2
 #define  MAX_TMP 3
 
@@ -16,6 +16,7 @@ L0ByFaceVector::L0ByFaceVector(GLMmodel *originmeshmodel, IndexList **originvert
     faceSpreadNeighborFace = NULL;
     p = NULL;
     v = NULL;
+    weightCov = NULL;
 }
 
 L0ByFaceVector::~L0ByFaceVector()
@@ -47,6 +48,13 @@ L0ByFaceVector::~L0ByFaceVector()
 
     faceNeighborFace = NULL;
     faceSpreadNeighborFace = NULL;
+    weightCov = NULL;
+}
+
+
+void L0ByFaceVector::useWeightCov(double **pWeightCov)
+{
+    weightCov = pWeightCov;
 }
 
 GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
@@ -109,36 +117,82 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
             }
             max_dist = max_dist > 1e-12 ? max_dist : 1e-12;
             max_norm = max_norm > 1e-12 ? max_norm : 1e-12;
+			max_dist = 1.0;
+			max_norm = 0.35;
 
-            wsum = 0.0;
-            wv.clear();
-            for(j = 0;j < (int)areav.size();j++){
-                w = areav[j] * exp(- distv[j] * distv[j] / (2 * max_dist * max_dist) - normv[j] * normv[j] / (2 * max_norm * max_norm));
-                wsum += w;
-                wv.push_back(w);
-            }
+			if(NULL == weightCov){
+				wsum = 0.0;
+				wv.clear();
+				for(j = 0;j < (int)areav.size();j++){
+					w = areav[j] * exp(- distv[j] * distv[j] / (2 * max_dist * max_dist) - normv[j] * normv[j] / (2 * max_norm * max_norm));
+					wsum += w;
+					wv.push_back(w);
+				}
 
-            for(j = 0;j < 3;j++){
-                tsum[j] = 0.0;
-            }
-            faceneighborfacetail = faceNeighborFace[i];
-            k = 0;
-            while(faceneighborfacetail){
-                if(i != faceneighborfacetail->data){
-                    for(j = 0;j < 3;j++){
-                        tsum[j] += wv[k] / wsum * faceVector[j][faceneighborfacetail->data];
-                    }
-                    k++;
-                }
-                faceneighborfacetail = faceneighborfacetail->next;
-            }
-            for(j = 0;j < 3;j++){
-                faceVector[j][i] = tsum[j];
-            }
+				for(j = 0;j < 3;j++){
+					tsum[j] = 0.0;
+				}
+
+				faceneighborfacetail = faceNeighborFace[i];
+				k = 0;
+				while(faceneighborfacetail){
+					if(i != faceneighborfacetail->data){
+						for(j = 0;j < 3;j++){
+							tsum[j] += wv[k] / wsum * faceVector[j][faceneighborfacetail->data];
+						}
+						k++;
+					}
+					faceneighborfacetail = faceneighborfacetail->next;
+				}
+				for(j = 0;j < 3;j++){
+					faceVector[j][i] = tsum[j];
+				}
+			}else{
+				for(j = 0;j < 3;j++){
+					tsum[j] = 0.0;
+				}
+				k = 0;
+				faceneighborfacetail = faceNeighborFace[i];
+				while(faceneighborfacetail){
+					if(faceneighborfacetail->data != i){
+						k++;
+					}
+					faceneighborfacetail = faceneighborfacetail->next;
+				}
+				faceneighborfacetail = faceNeighborFace[i];
+				while(faceneighborfacetail){
+					if(faceneighborfacetail->data != i){
+						for(j = 0;j < 3;j++){
+							tsum[j] += 1.0 / k * faceVector[j][faceneighborfacetail->data];
+						}
+					}
+					faceneighborfacetail = faceneighborfacetail->next;
+				}
+				for(j = 0;j < 3;j++){
+					faceVector[j][i] = tsum[j];
+				}
+
+
+/*				k = 0;
+				faceneighborfacetail = faceNeighborFace[i];
+				while(faceneighborfacetail){
+					if(faceneighborfacetail->data != i){
+						for(j = 0;j < 3;j++){
+							tsum[j] += weightCov[i][k] * faceVector[j][faceneighborfacetail->data];
+						}
+					}
+					faceneighborfacetail = faceneighborfacetail->next;
+					k++;
+				}
+				for(j = 0;j < 3;j++){
+					faceVector[j][i] = tsum[j];
+				}*/
+			}
         }
-        recoveryVerticesByFaceVector();
+		recoveryVerticesByFaceVector();
         printf("%d\n",ftemp);
     }
+
     for(i = 0;i < (int)meshmodel->numvertices;i++){
         for(j = 0;j < 3;j++){
             meshmodel->vertices[3 * (i + 1) + j]  = model[3 * i + j];
@@ -379,6 +433,8 @@ void L0ByFaceVector::updateInfo()
         }
         max_dist = max_dist > 1e-12 ? max_dist : 1e-12;
         max_norm = max_norm > 1e-12 ? max_norm : 1e-12;
+		max_dist = 1.0;
+		max_norm = 0.35;
 
         wsum = 0.0;
         wv.clear();
@@ -392,15 +448,26 @@ void L0ByFaceVector::updateInfo()
         faceneighborfacetail = faceNeighborFace[i];
         k = 0;
         j = 0;
-        for(j = 0;j < info[i][0].cnt;j++){
-            if(i != faceneighborfacetail->data){
-                info[i][j].w = wv[k] / wsum;
-//                info[i][j].w = 1.0 / (int)areav.size();
-                k++;
-            }else{
-                info[i][j].w = -1;
+        if(NULL == weightCov){
+            for(j = 0;j < info[i][0].cnt;j++){
+                if(i != faceneighborfacetail->data){
+                    info[i][j].w = wv[k] / wsum;
+                    //                info[i][j].w = 1.0 / (int)areav.size();
+                    k++;
+                }else{
+                    info[i][j].w = -1;
+                }
+                faceneighborfacetail = faceneighborfacetail->next;
             }
-            faceneighborfacetail = faceneighborfacetail->next;
+        }else{
+            for(j = 0;j < info[i][0].cnt;j++){
+                if(i != faceneighborfacetail->data){
+                    info[i][j].w = weightCov[i][j];
+                }else{
+                    info[i][j].w = -1 * weightCov[i][j];
+                }
+                faceneighborfacetail = faceneighborfacetail->next;
+            }
         }
     }
     faceneighborfacetail = NULL;
@@ -487,7 +554,8 @@ void L0ByFaceVector::delFaceSpreadNeighborFace()
 
 void L0ByFaceVector::recoveryVerticesByFaceVector()
 {
-/*    RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
+	/*
+    RecoveryByL2 myRecovery(meshmodel, verticesvindices, verticestindices);
     myRecovery.changeModel(model);
     myRecovery.changeFaceVector(faceVector);
     myRecovery.doL2(2);

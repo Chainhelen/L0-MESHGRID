@@ -9,9 +9,13 @@ class L0ByTowNeighborFaceVector : public L0{
         List **faceNeighborFace;
         double **p;
         double **v;
+        double **weightCov;
     public:
         L0ByTowNeighborFaceVector(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **originverticestindices);
         ~L0ByTowNeighborFaceVector();
+
+
+        void useWeightCov(double **pWeightCov);
         GLMmodel* doL0(double parpha, double pbeta, double plambda, int pmaxtimes);
 
         void chooseTypeOfNeighbor();

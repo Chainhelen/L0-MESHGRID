@@ -7,6 +7,7 @@ L0ByVerNormal::L0ByVerNormal(GLMmodel *originmeshmodel, IndexList **originvertic
     info = NULL;
     p = NULL;
     v = NULL;
+    weightCov = NULL;
     guidedmesh = NULL;
     guidedmeshVerNormal = NULL;
     guidedmeshFaceNormal = NULL;
@@ -106,6 +107,7 @@ void L0ByVerNormal::initGuidedmeshVerNormal(){
 L0ByVerNormal::~L0ByVerNormal()
 {
     int i;
+    weightCov = NULL;
     if(p){
         for(i = 0;i < 3;i++){
             delete []p[i];
@@ -126,6 +128,11 @@ L0ByVerNormal::~L0ByVerNormal()
     delInfo();
     delVerNeighborVer();
     delVerSpreadNeighborVer();
+}
+
+void L0ByVerNormal::useWeightCov(double **pWeightCov)
+{
+    weightCov = pWeightCov;
 }
 
 GLMmodel* L0ByVerNormal::doL0(double parpha, double pbeta, double plambda, int pmaxtimes)
@@ -341,14 +348,26 @@ void L0ByVerNormal::updateInfo()
         }
         sum = sum > 1e-3 ? sum : 1e-3;
 
-        k = 0;
-        for(j = 0;j < info[i][j].cnt;j++){
-            if(i != info[i][j].data){
- //               info[i][j].w = -1 * distv[k] / sum;
-                info[i][j].w = -1 / (int)distv.size();
-                k++;
-            }else{
-                info[i][j].w = 1;
+        if(NULL != weightCov){
+            k = 0;
+            for(j = 0;j < info[i][j].cnt;j++){
+                if(i != info[i][j].data){
+                    //               info[i][j].w = -1 * distv[k] / sum;
+                    info[i][j].w = -1 / (int)distv.size();
+                    k++;
+                }else{
+                    info[i][j].w = 1;
+                }
+            }
+        }else{
+            k = 0;
+            for(j = 0;j < info[i][j].cnt;j++){
+                if(i != info[i][j].data){
+                    info[i][j].w = weightCov[i + 1][k];
+                    k++;
+                }else{
+                    info[i][j].w = 1;
+                }
             }
         }
     }
