@@ -1,9 +1,9 @@
-#ifndef L0BYFACEVECTOR_H
-#define L0BYFACEVECTOR_H
+#ifndef L0BYFACENORMAL_H
+#define L0BYFACENORMAL_H
 #include "L0.H"
 #include "RECOVERYBYL2.H"
 
-class L0ByFaceVector : public L0{
+class L0ByFaceNormal : public L0{
     public:
         Info **info;
         List **faceNeighborFace;
@@ -12,8 +12,8 @@ class L0ByFaceVector : public L0{
         double **v;
         double **weightCov;
     public:
-        L0ByFaceVector(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **originverticestindices);
-        ~L0ByFaceVector();
+        L0ByFaceNormal(GLMmodel *originmeshmodel,IndexList **originverticesvindices,IndexList **originverticestindices);
+        ~L0ByFaceNormal();
 
 
         void useWeightCov(double **pWeightCov);
