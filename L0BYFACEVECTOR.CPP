@@ -172,7 +172,6 @@ GLMmodel* L0ByFaceVector::doL0(double parpha, double pbeta, double plambda, int 
 					faceVector[j][i] = tsum[j];
 				}
 
-
 /*				k = 0;
 				faceneighborfacetail = faceNeighborFace[i];
 				while(faceneighborfacetail){
